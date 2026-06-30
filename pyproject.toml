@@ -47,6 +47,9 @@ runtime = [
   'com.oracle.database.jdbc:ojdbc11',
   'io.micronaut.pyronaut:micronaut-pyronaut-logback'
 ]
+development-runtime = [
+  'io.micronaut.controlpanel:micronaut-control-panel-datasource'
+]
 build = [
   'io.micronaut:micronaut-context-python',
   'io.micronaut:micronaut-inject-python',
