@@ -1,0 +1,29 @@
+<main class="container flex-grow-1 d-flex align-items-center justify-content-center py-5">
+    <div class="text-center animate-fade-in-up">
+        <div class="mb-4">
+            <svg width="200" height="150" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="100" cy="120" rx="60" ry="20" fill="#e2e8f0"/>
+                <path d="M60 100 Q40 80 50 50 Q55 30 70 25 L80 5 Q85 -5 90 5 L95 20 Q110 15 130 20 L135 5 Q140 -5 145 5 L150 25 Q165 30 170 50 Q180 80 160 100 Q145 115 125 120 L120 135 Q115 145 100 145 Q85 145 80 135 L75 120 Q55 115 60 100" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+                <circle cx="80" cy="65" r="12" fill="white"/>
+                <circle cx="120" cy="65" r="12" fill="white"/>
+                <circle cx="82" cy="68" r="6" fill="#6366f1"/>
+                <circle cx="122" cy="68" r="6" fill="#6366f1"/>
+                <path d="M75 80 Q72 90 75 95 Q78 90 75 80" fill="#4facfe"/>
+                <path d="M125 80 Q122 90 125 95 Q128 90 125 80" fill="#4facfe"/>
+                <path d="M90 90 Q100 85 110 90" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <ellipse cx="100" cy="82" rx="5" ry="4" fill="#f093fb"/>
+            </svg>
+        </div>
+        <h1 class="display-1 mb-2" style="background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">404</h1>
+        <h2 class="mb-3">Page Not Found</h2>
+        <p class="lead text-muted mb-4">The page you're looking for seems to have wandered off. Even our search cat couldn't find it!</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="/" class="btn btn-primary btn-lg">
+                <i class="fas fa-home me-2"></i>Go Home
+            </a>
+            <a href="/owners/find" class="btn btn-secondary btn-lg">
+                <i class="fas fa-search me-2"></i>Find Owners
+            </a>
+        </div>
+    </div>
+</main>

@@ -1,0 +1,26 @@
+#:schema ../__pyronaut__/schemas/micronaut-application.schema.json
+
+[micronaut.application]
+name = 'pyronaut-petclinic'
+
+[micronaut.router.static-resources.default]
+enabled = true
+mapping = '/resources/**'
+paths = ['file:static']
+
+[micronaut.caches.vets]
+expire-after-write = '60s'
+maximum-size = 100
+
+[datasources.default]
+db-type = 'oracle'
+driver-class-name = 'oracle.jdbc.OracleDriver'
+schema-generate = 'CREATE_DROP'
+dialect = 'ORACLE'
+
+[petclinic.sample-data]
+enabled = true
+
+[logger.levels]
+petclinic = 'DEBUG'
+io.micronaut.data = 'INFO'

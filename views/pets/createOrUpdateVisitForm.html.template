@@ -1,0 +1,63 @@
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-calendar-plus me-3"></i>New Visit</h1>
+        <p><i class="fas fa-paw me-2"></i>Name: $pet_name</p>
+    </div>
+</div>
+
+<main class="container flex-grow-1 py-4">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <a href="$back_url" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Owner
+            </a>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            $pet_information
+        </div>
+
+        <div class="col-lg-8">
+            <div class="form-container animate-fade-in-up stagger-2">
+                <div class="text-center mb-4">
+                    <div class="feature-icon gradient-3 mx-auto mb-3">
+                        <i class="fas fa-stethoscope"></i>
+                    </div>
+                    <h4>Schedule a New Visit</h4>
+                    <p class="text-muted">Record a visit for $pet_name</p>
+                </div>
+
+                $validation_summary
+
+                <form action="$form_action" method="post" class="needs-validation" novalidate>
+                    <div class="mb-4">
+                        <label for="date" class="form-label">
+                            <i class="fas fa-calendar me-2 text-primary"></i>Visit Date
+                        </label>
+                        <input type="date" class="form-control $date_invalid" id="date" name="date" value="$visit_date" required>
+                        <div class="invalid-feedback">$date_error</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-notes-medical me-2 text-primary"></i>Description
+                        </label>
+                        <textarea class="form-control $description_invalid" id="description" name="description" rows="4" required>$description</textarea>
+                        <div class="invalid-feedback">$description_error</div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                            <i class="fas fa-plus me-2"></i>Add Visit
+                        </button>
+                        <a href="$back_url" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>

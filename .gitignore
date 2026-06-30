@@ -1,0 +1,34 @@
+# Python environments and packaging output
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Pyronaut generated files
+__pyronaut__/
+.micronaut/
+
+# Local editor and OS metadata
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+tmp/
+temp/
+

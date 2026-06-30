@@ -1,0 +1,62 @@
+#:schema ./__pyronaut__/schemas/pyronaut-pyproject.schema.json
+
+[project]
+name = 'pyronaut-petclinic'
+version = '0.1.0'
+
+[build-system]
+requires = ['setuptools', 'wheel', 'tomli']
+build-backend = 'setuptools.build_meta'
+
+[tool.setuptools]
+package-dir.'' = 'src'
+packages.find.where = ['src']
+
+[tool.pyronaut.toolchain]
+type = 'native'
+
+[tool.pyronaut]
+repositories = ['mavenCentral']
+core.version = '5.1.0-SNAPSHOT'
+platform.version = '5.0.0'
+
+[tool.pyronaut.control-panel]
+enabled = true
+
+[tool.pyronaut.sources]
+python = 'src'
+python-test = 'tests'
+java = 'src-java'
+resources = 'config'
+test-resources = 'tests-config'
+additional-resources = ['views', 'static']
+
+[tool.pyronaut.test-resources]
+enabled = true
+client-timeout = 180
+
+[tool.pyronaut.dependencies]
+runtime = [
+  'io.micronaut:micronaut-http-server-netty',
+  'io.micronaut.cache:micronaut-cache-core',
+  'io.micronaut.data:micronaut-data-jdbc',
+  'io.micronaut.serde:micronaut-serde-jackson',
+  'io.micronaut.sql:micronaut-jdbc-hikari',
+  'io.micronaut.validation:micronaut-validation',
+  'io.micronaut.views:micronaut-views-core',
+  'com.oracle.database.jdbc:ojdbc11',
+  'io.micronaut.pyronaut:micronaut-pyronaut-logback'
+]
+build = [
+  'io.micronaut:micronaut-context-python',
+  'io.micronaut:micronaut-inject-python',
+  'io.micronaut.data:micronaut-data-processor',
+  'io.micronaut.serde:micronaut-serde-processor',
+  'io.micronaut.validation:micronaut-validation-processor'
+]
+test = [
+  'io.micronaut.pyronaut:micronaut-pyronaut-pytest',
+  'io.micronaut.pyronaut:micronaut-pyronaut-requests',
+  'io.micronaut.test:micronaut-test-junit5',
+  'io.micronaut.testresources:micronaut-test-resources-jdbc-oracle-free'
+]

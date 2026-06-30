@@ -1,0 +1,78 @@
+<div class="page-header">
+    <div class="container">
+        <h1>
+            <i class="$header_icon"></i>
+            $header_title
+        </h1>
+        <p>$form_description</p>
+    </div>
+</div>
+
+<main class="container flex-grow-1 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <a href="$back_url" class="btn btn-secondary mb-4">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+
+            <div class="form-container animate-fade-in-up">
+                $validation_summary
+                <form action="$form_action" method="post" class="needs-validation" novalidate>
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="firstName" class="form-label">
+                                <i class="fas fa-user me-2 text-primary"></i>First Name
+                            </label>
+                            <input type="text" class="form-control $first_invalid" id="firstName" name="firstName" value="$first_name" required>
+                            <div class="invalid-feedback">$first_error</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lastName" class="form-label">
+                                <i class="fas fa-user me-2 text-primary"></i>Last Name
+                            </label>
+                            <input type="text" class="form-control $last_invalid" id="lastName" name="lastName" value="$last_name" required>
+                            <div class="invalid-feedback">$last_error</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="address" class="form-label">
+                            <i class="fas fa-home me-2 text-primary"></i>Address
+                        </label>
+                        <input type="text" class="form-control $address_invalid" id="address" name="address" value="$address_value" required>
+                        <div class="invalid-feedback">$address_error</div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="city" class="form-label">
+                                <i class="fas fa-city me-2 text-primary"></i>City
+                            </label>
+                            <input type="text" class="form-control $city_invalid" id="city" name="city" value="$city_value" required>
+                            <div class="invalid-feedback">$city_error</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="telephone" class="form-label">
+                                <i class="fas fa-phone me-2 text-primary"></i>Telephone
+                            </label>
+                            <input type="tel" class="form-control $telephone_invalid" id="telephone" name="telephone" value="$telephone" pattern="[0-9]{10}" required>
+                            <div class="invalid-feedback">$telephone_error</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                            <i class="$button_icon"></i>
+                            $button_label
+                        </button>
+                        <a href="$back_url" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>

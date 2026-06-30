@@ -1,0 +1,90 @@
+"""Micronaut Data JDBC repositories.
+
+Repositories are declared as Python ``Protocol`` classes. Pyronaut processes
+the Micronaut Data annotations and creates the runtime implementation, so the
+methods only need signatures.
+
+Key concepts demonstrated here:
+
+* ``@JdbcRepository`` selects Micronaut Data JDBC and the Oracle SQL dialect.
+* ``CrudRepository[T, ID]`` provides standard CRUD methods.
+* Method names such as ``findByOwnerIdOrderByName`` are parsed into queries.
+* ``@Query`` is useful for native SQL when the method-name query would be too
+  limited or when Oracle-specific SQL is clearer.
+* ``@Join`` fetches relations eagerly so entity fields can stay non-null.
+"""
+
+from typing import Protocol
+
+from micronaut.data.annotation import Join, Query
+from micronaut.data.jdbc.annotation import JdbcRepository
+from micronaut.data.model.query.builder.sql import Dialect
+from micronaut.data.repository import CrudRepository
+
+from .entities import Owner, Pet, PetType, Specialty, Vet, VetSpecialty, Visit
+
+
+@JdbcRepository(dialect=Dialect.ORACLE)
+class OwnerRepository(CrudRepository[Owner, int], Protocol):
+    """Owner queries used by search and list screens."""
+
+    @Query("SELECT * FROM OWNERS ORDER BY LAST_NAME", nativeQuery=True)
+    def findAllOrdered(self) -> list[Owner]: ...
+
+    @Query("SELECT * FROM OWNERS WHERE LOWER(LAST_NAME) LIKE '%' || LOWER(:lastName) || '%' ORDER BY LAST_NAME", nativeQuery=True)
+    def findByLastName(self, lastName: str) -> list[Owner]: ...
+
+
+@JdbcRepository(dialect=Dialect.ORACLE)
+class PetRepository(CrudRepository[Pet, int], Protocol):
+    """Pet queries that eagerly fetch owner and type relationships."""
+
+    @Join(value="type", type=Join.Type.FETCH)
+    @Join(value="owner", type=Join.Type.FETCH)
+    def findOneById(self, id: int) -> Pet | None: ...
+
+    @Join(value="type", type=Join.Type.FETCH)
+    @Join(value="owner", type=Join.Type.FETCH)
+    def findByOwnerIdOrderByName(self, ownerId: int) -> list[Pet]: ...
+
+
+@JdbcRepository(dialect=Dialect.ORACLE)
+class PetTypeRepository(CrudRepository[PetType, int], Protocol):
+    """Lookup repository for pet types shown in form select boxes."""
+
+    @Query("SELECT * FROM PET_TYPES ORDER BY NAME", nativeQuery=True)
+    def findAllOrderByName(self) -> list[PetType]: ...
+
+
+@JdbcRepository(dialect=Dialect.ORACLE)
+class VisitRepository(CrudRepository[Visit, int], Protocol):
+    """Visit queries with joined pet details for visit forms and owner pages."""
+
+    @Join(value="pet", type=Join.Type.FETCH)
+    @Join(value="pet.type", type=Join.Type.FETCH)
+    @Join(value="pet.owner", type=Join.Type.FETCH)
+    def findByPetIdOrderByDateDesc(self, petId: int) -> list[Visit]: ...
+
+
+@JdbcRepository(dialect=Dialect.ORACLE)
+class VetRepository(CrudRepository[Vet, int], Protocol):
+    """Veterinarian list queries."""
+
+    @Query("SELECT * FROM VETS ORDER BY LAST_NAME", nativeQuery=True)
+    def findAllWithSpecialties(self) -> list[Vet]: ...
+
+
+@JdbcRepository(dialect=Dialect.ORACLE)
+class SpecialtyRepository(CrudRepository[Specialty, int], Protocol):
+    """Lookup repository for specialties."""
+
+    @Query("SELECT * FROM SPECIALTIES ORDER BY NAME", nativeQuery=True)
+    def findAllOrderByName(self) -> list[Specialty]: ...
+
+
+@JdbcRepository(dialect=Dialect.ORACLE)
+class VetSpecialtyRepository(CrudRepository[VetSpecialty, int], Protocol):
+    """Join-table repository used to render each vet's specialties."""
+
+    @Query("SELECT s.* FROM SPECIALTIES s JOIN VET_SPECIALTIES vs ON vs.SPECIALTY_ID = s.ID WHERE vs.VET_ID = :vetId ORDER BY s.NAME", nativeQuery=True)
+    def findSpecialtiesByVetId(self, vetId: int) -> list[Specialty]: ...
