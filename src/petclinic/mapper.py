@@ -38,31 +38,31 @@ class FormMapper(ABC):
     def to_owner_form(self, owner: Owner) -> OwnerForm:
         ...
 
-    @Mapper.Mapping(**{"from": "#{null}", "to": "id"})
-    @Mapper.Mapping(**{"from": "#{form.name}", "to": "name"})
-    @Mapper.Mapping(**{"from": "#{form.birthDate}", "to": "birthDate"})
-    @Mapper.Mapping(**{"from": "#{owner}", "to": "owner"})
-    @Mapper.Mapping(**{"from": "#{pet_type}", "to": "type"})
+    @Mapper.Mapping(from_="#{null}", to="id")
+    @Mapper.Mapping(from_="#{form.name}", to="name")
+    @Mapper.Mapping(from_="#{form.birthDate}", to="birthDate")
+    @Mapper.Mapping(from_="#{owner}", to="owner")
+    @Mapper.Mapping(from_="#{pet_type}", to="type")
     @abstractmethod
     def to_pet(self, form: PetForm, owner: Owner, pet_type: PetType) -> Pet:
         ...
 
-    @Mapper.Mapping(**{"from": "pet.id", "to": "id"})
-    @Mapper.Mapping(**{"from": "#{form.name}", "to": "name"})
-    @Mapper.Mapping(**{"from": "#{form.birthDate}", "to": "birthDate"})
-    @Mapper.Mapping(**{"from": "#{owner}", "to": "owner"})
-    @Mapper.Mapping(**{"from": "#{pet_type}", "to": "type"})
+    @Mapper.Mapping(from_="pet.id", to="id")
+    @Mapper.Mapping(from_="#{form.name}", to="name")
+    @Mapper.Mapping(from_="#{form.birthDate}", to="birthDate")
+    @Mapper.Mapping(from_="#{owner}", to="owner")
+    @Mapper.Mapping(from_="#{pet_type}", to="type")
     @abstractmethod
     def update_pet(self, pet: Pet, form: PetForm, owner: Owner, pet_type: PetType) -> Pet:
         ...
 
-    @Mapper.Mapping(**{"from": "#{pet.get_type_id()}", "to": "typeId"})
+    @Mapper.Mapping(from_="#{pet.get_type_id()}", to="typeId")
     @abstractmethod
     def to_pet_form(self, pet: Pet) -> PetForm:
         ...
 
-    @Mapper.Mapping(**{"from": "#{null}", "to": "id"})
-    @Mapper.Mapping(**{"from": "#{pet}", "to": "pet"})
+    @Mapper.Mapping(from_="#{null}", to="id")
+    @Mapper.Mapping(from_="#{pet}", to="pet")
     @abstractmethod
     def to_visit(self, form: VisitForm, pet: Pet) -> Visit:
         ...
