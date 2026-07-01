@@ -546,14 +546,14 @@ def _vet_list_context(model: dict) -> dict:
         }
     cards = []
     for vet in vets:
-        specialties = _get(vet, "specialtiesAsString")
-        if specialties and specialties != "none":
-            specialty_html = "".join(
-                f'<span class="specialty-badge">{h(s.strip())}</span>'
-                for s in str(specialties).split(",")
+        specialities = _get(vet, "specialitiesAsString")
+        if specialities and specialities != "none":
+            speciality_html = "".join(
+                f'<span class="speciality-badge">{h(s.strip())}</span>'
+                for s in str(specialities).split(",")
             )
         else:
-            specialty_html = '<span class="specialty-badge">General Practice</span>'
+            speciality_html = '<span class="speciality-badge">General Practice</span>'
         cards.append(
             f"""
 <div class="col-md-6 col-lg-4">
@@ -566,7 +566,7 @@ def _vet_list_context(model: dict) -> dict:
         <div class="vet-card-body">
             <h5>{h(_get(vet, "firstName"))} {h(_get(vet, "lastName"))}</h5>
             <div class="mt-3">
-                {specialty_html}
+                {speciality_html}
             </div>
             <div class="mt-4 pt-3 border-top">
                 <div class="d-flex justify-content-center gap-3">

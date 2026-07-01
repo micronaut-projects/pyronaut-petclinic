@@ -21,7 +21,7 @@ from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect
 from micronaut.data.repository import CrudRepository
 
-from .entities import Owner, Pet, PetType, Speciality, Vet, VetSpeciality, Visit
+from .entities import Owner, Pet, PetType, Speciality, Vet, VetSpeciality, VetWithSpecialities, Visit
 
 
 @JdbcRepository(dialect=Dialect.ORACLE)
@@ -70,8 +70,25 @@ class VisitRepository(CrudRepository[Visit, int], Protocol):
 class VetRepository(CrudRepository[Vet, int], Protocol):
     """Veterinarian list queries."""
 
-    @Query("SELECT * FROM VETS ORDER BY LAST_NAME", nativeQuery=True)
-    def findAllWithSpecialties(self) -> list[Vet]: ...
+    @Query(
+        """
+        SELECT
+            v.ID,
+            v.FIRST_NAME,
+            v.LAST_NAME,
+            LISTAGG(
+                CASE WHEN s.ID IS NOT NULL THEN s.ID || ':' || s.NAME END,
+                '|'
+            ) WITHIN GROUP (ORDER BY s.NAME) AS SPECIALITY_ROWS
+        FROM VETS v
+        LEFT JOIN VET_SPECIALITIES vs ON vs.VET_ID = v.ID
+        LEFT JOIN SPECIALITIES s ON s.ID = vs.SPECIALITY_ID
+        GROUP BY v.ID, v.FIRST_NAME, v.LAST_NAME
+        ORDER BY v.LAST_NAME
+        """,
+        nativeQuery=True,
+    )
+    def findAllWithSpecialities(self) -> list[VetWithSpecialities]: ...
 
 
 @JdbcRepository(dialect=Dialect.ORACLE)
@@ -84,7 +101,4 @@ class SpecialityRepository(CrudRepository[Speciality, int], Protocol):
 
 @JdbcRepository(dialect=Dialect.ORACLE)
 class VetSpecialityRepository(CrudRepository[VetSpeciality, int], Protocol):
-    """Join-table repository used to render each vet's specialities."""
-
-    @Query("SELECT s.* FROM SPECIALITIES s JOIN VET_SPECIALITIES vs ON vs.SPECIALITY_ID = s.ID WHERE vs.VET_ID = :vetId ORDER BY s.NAME", nativeQuery=True)
-    def findSpecialitiesByVetId(self, vetId: int) -> list[Speciality]: ...
+    """Join-table repository used to persist vet speciality links."""

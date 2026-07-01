@@ -469,7 +469,7 @@ h1, h2, h3, h4, h5, h6 {
     text-align: center;
 }
 
-.specialty-badge {
+.speciality-badge {
     display: inline-block;
     background: rgba(59, 130, 246, 0.1);
     color: var(--primary);

@@ -57,7 +57,7 @@ def test_seed_data_and_main_pages(client):
     assert ".navbar" in css.text
     vets = client.get("/vets/json").json()
     assert len(vets) == 6
-    assert any(vet["lastName"] == "Douglas" and len(vet["specialties"]) == 2 for vet in vets)
+    assert any(vet["lastName"] == "Douglas" and len(vet["specialities"]) == 2 for vet in vets)
     owners = client.get("/owners/list").text
     assert "George Franklin" in owners
     assert "Betty Davis" in owners

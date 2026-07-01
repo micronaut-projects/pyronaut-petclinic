@@ -98,7 +98,7 @@ def _vet(first_name: str, last_name: str, *specialities: Speciality) -> Vet:
 
     vet = vet_repository.save(Vet(firstName=first_name, lastName=last_name))
     for speciality in specialities:
-        vet_speciality_repository.save(VetSpeciality(vetId=vet.id, specialityId=speciality.id))
+        vet_speciality_repository.save(VetSpeciality(vet=vet, speciality=speciality))
     return vet
 
 

@@ -16,14 +16,13 @@ from jakarta.inject import Inject
 from jakarta.transaction import Transactional
 from micronaut.context.annotation import Prototype
 
-from .entities import Owner, Pet, PetType, Speciality, Vet, Visit
+from .entities import Owner, Pet, PetType, Speciality, VetWithSpecialities, Visit
 from .repositories import (
     OwnerRepository,
     PetRepository,
     PetTypeRepository,
     SpecialityRepository,
     VetRepository,
-    VetSpecialityRepository,
     VisitRepository,
 )
 
@@ -53,7 +52,6 @@ class ClinicService:
     visit_repository: Annotated[VisitRepository, Inject]
     vet_repository: Annotated[VetRepository, Inject]
     speciality_repository: Annotated[SpecialityRepository, Inject]
-    vet_speciality_repository: Annotated[VetSpecialityRepository, Inject]
 
     def find_owner_by_id(self, owner_id: int) -> Owner | None:
         """Return one owner or ``None`` when no row exists."""
@@ -102,8 +100,8 @@ class ClinicService:
             return self.visit_repository.save(visit)
         return self.visit_repository.update(visit)
 
-    def find_all_vets(self) -> list[Vet]:
-        return list(self.vet_repository.findAllWithSpecialties())
+    def find_all_vets(self) -> list[VetWithSpecialities]:
+        return list(self.vet_repository.findAllWithSpecialities())
 
     def owner_detail_model(self, owner: Owner) -> list[dict]:
         """Build the view model used by the owner details template.
@@ -134,21 +132,35 @@ class ClinicService:
     def vet_models(self) -> list[dict]:
         """Build both HTML and JSON representations for veterinarian lists."""
 
-        vets = list(self.vet_repository.findAllWithSpecialties())
+        vets = list(self.vet_repository.findAllWithSpecialities())
         models = []
         for vet in vets:
-            specialties = []
-            if vet.id is not None:
-                specialties = list(self.vet_speciality_repository.findSpecialitiesByVetId(vet.id))
-            specialty_names = sorted(specialty.name for specialty in specialties)
+            specialities = _parse_speciality_rows(vet.specialityRows)
+            speciality_names = [speciality["name"] for speciality in specialities]
             models.append({
                 "id": vet.id,
                 "firstName": vet.firstName,
                 "lastName": vet.lastName,
-                "specialties": [{"id": s.id, "name": s.name} for s in sorted(specialties, key=lambda s: s.name)],
-                "specialtiesAsString": ", ".join(specialty_names) if specialty_names else "none",
+                "specialities": specialities,
+                "specialitiesAsString": ", ".join(speciality_names) if speciality_names else "none",
             })
         return models
 
     def find_all_specialities(self) -> list[Speciality]:
         return list(self.speciality_repository.findAllOrderByName())
+
+
+def _parse_speciality_rows(value: str | None) -> list[dict]:
+    """Decode ``LISTAGG`` speciality rows from the vet aggregate query."""
+
+    if not value:
+        return []
+    specialities = []
+    for row in str(value).split("|"):
+        if not row or ":" not in row:
+            continue
+        speciality_id, name = row.split(":", 1)
+        if not speciality_id:
+            continue
+        specialities.append({"id": int(speciality_id), "name": name})
+    return specialities

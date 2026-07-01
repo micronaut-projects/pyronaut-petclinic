@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from java.time import LocalDate
+from micronaut.core.annotation import Introspected
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Relation
 from micronaut.serde.annotation import Serdeable
 
@@ -118,11 +119,23 @@ class Vet:
 
 
 @Serdeable
+@Introspected
+@dataclass
+class VetWithSpecialities:
+    """Projection row returned by the vet list aggregate query."""
+
+    id: int
+    firstName: str
+    lastName: str
+    specialityRows: str | None
+
+
+@Serdeable
 @MappedEntity("VET_SPECIALITIES")
 @dataclass
 class VetSpeciality:
     """Join-table row linking a veterinarian to a speciality."""
 
-    vetId: int
-    specialityId: int
+    vet: Annotated[Vet, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("VET_ID")]
+    speciality: Annotated[Speciality, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("SPECIALITY_ID")]
     id: Annotated[int | None, Id, GeneratedValue] = None
