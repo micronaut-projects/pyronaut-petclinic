@@ -1,7 +1,7 @@
 """Startup sample-data loader.
 
 The original PetClinic application ships with well-known sample owners, pets,
-visits, vets, and specialties. This module shows how to do the same in
+visits, vets, and specialities. This module shows how to do the same in
 Pyronaut with a Micronaut startup event listener.
 
 Concepts demonstrated:
@@ -20,14 +20,14 @@ from jakarta.transaction import Transactional
 from micronaut.context.event import StartupEvent
 from micronaut.runtime.event.annotation import EventListener
 
-from .entities import Owner, Pet, PetType, Specialty, Vet, VetSpecialty, Visit
+from .entities import Owner, Pet, PetType, Speciality, Vet, VetSpeciality, Visit
 from .repositories import (
     OwnerRepository,
     PetRepository,
     PetTypeRepository,
-    SpecialtyRepository,
+    SpecialityRepository,
     VetRepository,
-    VetSpecialtyRepository,
+    VetSpecialityRepository,
     VisitRepository,
 )
 
@@ -36,8 +36,8 @@ pet_repository: Annotated[PetRepository, Inject]
 pet_type_repository: Annotated[PetTypeRepository, Inject]
 visit_repository: Annotated[VisitRepository, Inject]
 vet_repository: Annotated[VetRepository, Inject]
-specialty_repository: Annotated[SpecialtyRepository, Inject]
-vet_specialty_repository: Annotated[VetSpecialtyRepository, Inject]
+speciality_repository: Annotated[SpecialityRepository, Inject]
+vet_speciality_repository: Annotated[VetSpecialityRepository, Inject]
 
 
 @EventListener
@@ -45,9 +45,9 @@ vet_specialty_repository: Annotated[VetSpecialtyRepository, Inject]
 def load_sample_data(event: StartupEvent):
     """Insert deterministic sample rows whenever the app starts."""
 
-    radiology = specialty_repository.save(Specialty(name="radiology"))
-    surgery = specialty_repository.save(Specialty(name="surgery"))
-    dentistry = specialty_repository.save(Specialty(name="dentistry"))
+    radiology = speciality_repository.save(Speciality(name="radiology"))
+    surgery = speciality_repository.save(Speciality(name="surgery"))
+    dentistry = speciality_repository.save(Speciality(name="dentistry"))
 
     _vet("James", "Carter")
     _vet("Helen", "Leary", radiology)
@@ -93,12 +93,12 @@ def load_sample_data(event: StartupEvent):
     _visit(max_pet, LocalDate.of(2013, 1, 3), "neutered")
 
 
-def _vet(first_name: str, last_name: str, *specialties: Specialty) -> Vet:
-    """Create a vet and its join-table specialty rows."""
+def _vet(first_name: str, last_name: str, *specialities: Speciality) -> Vet:
+    """Create a vet and its join-table speciality rows."""
 
     vet = vet_repository.save(Vet(firstName=first_name, lastName=last_name))
-    for specialty in specialties:
-        vet_specialty_repository.save(VetSpecialty(vetId=vet.id, specialtyId=specialty.id))
+    for speciality in specialities:
+        vet_speciality_repository.save(VetSpeciality(vetId=vet.id, specialityId=speciality.id))
     return vet
 
 

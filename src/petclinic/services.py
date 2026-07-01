@@ -16,14 +16,14 @@ from jakarta.inject import Inject
 from jakarta.transaction import Transactional
 from micronaut.context.annotation import Prototype
 
-from .entities import Owner, Pet, PetType, Specialty, Vet, Visit
+from .entities import Owner, Pet, PetType, Speciality, Vet, Visit
 from .repositories import (
     OwnerRepository,
     PetRepository,
     PetTypeRepository,
-    SpecialtyRepository,
+    SpecialityRepository,
     VetRepository,
-    VetSpecialtyRepository,
+    VetSpecialityRepository,
     VisitRepository,
 )
 
@@ -52,8 +52,8 @@ class ClinicService:
     pet_type_repository: Annotated[PetTypeRepository, Inject]
     visit_repository: Annotated[VisitRepository, Inject]
     vet_repository: Annotated[VetRepository, Inject]
-    specialty_repository: Annotated[SpecialtyRepository, Inject]
-    vet_specialty_repository: Annotated[VetSpecialtyRepository, Inject]
+    speciality_repository: Annotated[SpecialityRepository, Inject]
+    vet_speciality_repository: Annotated[VetSpecialityRepository, Inject]
 
     def find_owner_by_id(self, owner_id: int) -> Owner | None:
         """Return one owner or ``None`` when no row exists."""
@@ -139,7 +139,7 @@ class ClinicService:
         for vet in vets:
             specialties = []
             if vet.id is not None:
-                specialties = list(self.vet_specialty_repository.findSpecialtiesByVetId(vet.id))
+                specialties = list(self.vet_speciality_repository.findSpecialitiesByVetId(vet.id))
             specialty_names = sorted(specialty.name for specialty in specialties)
             models.append({
                 "id": vet.id,
@@ -150,5 +150,5 @@ class ClinicService:
             })
         return models
 
-    def find_all_specialties(self) -> list[Specialty]:
-        return list(self.specialty_repository.findAllOrderByName())
+    def find_all_specialities(self) -> list[Speciality]:
+        return list(self.speciality_repository.findAllOrderByName())

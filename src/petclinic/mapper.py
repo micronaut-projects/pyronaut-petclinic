@@ -56,7 +56,7 @@ class FormMapper(ABC):
     def update_pet(self, pet: Pet, form: PetForm, owner: Owner, pet_type: PetType) -> Pet:
         ...
 
-    @Mapper.Mapping(**{"from": "#{pet.getTypeId()}", "to": "typeId"})
+    @Mapper.Mapping(**{"from": "#{pet.get_type_id()}", "to": "typeId"})
     @abstractmethod
     def to_pet_form(self, pet: Pet) -> PetForm:
         ...

@@ -9,7 +9,8 @@ Key concepts demonstrated here:
 
 * ``@MappedEntity`` maps a Python class to a database table.
 * ``@Id`` and ``@GeneratedValue`` identify generated primary keys.
-* ``@MappedProperty`` pins Python attribute names to explicit column names.
+* ``@MappedProperty`` pins Python attribute names to explicit column names only
+  when the convention-based name would be wrong or ambiguous.
 * ``@Relation`` models foreign-key relationships between entities.
 * ``@Serdeable`` lets entities be serialized for JSON responses.
 """
@@ -28,17 +29,17 @@ from micronaut.serde.annotation import Serdeable
 class PetType:
     """Lookup table entity for values such as cat, dog, and lizard."""
 
-    name: Annotated[str, MappedProperty("NAME")]
+    name: str
     id: Annotated[int | None, Id, GeneratedValue] = None
 
 
 @Serdeable
-@MappedEntity("SPECIALTIES")
+@MappedEntity("SPECIALITIES")
 @dataclass
-class Specialty:
-    """Lookup table entity for veterinarian specialties."""
+class Speciality:
+    """Lookup table entity for veterinarian specialities."""
 
-    name: Annotated[str, MappedProperty("NAME")]
+    name: str
     id: Annotated[int | None, Id, GeneratedValue] = None
 
 
@@ -52,11 +53,11 @@ class Owner:
     to ``None`` so new instances clearly represent unsaved rows.
     """
 
-    firstName: Annotated[str, MappedProperty("FIRST_NAME")]
-    lastName: Annotated[str, MappedProperty("LAST_NAME")]
-    address: Annotated[str, MappedProperty("ADDRESS")]
-    city: Annotated[str, MappedProperty("CITY")]
-    telephone: Annotated[str, MappedProperty("TELEPHONE")]
+    firstName: str
+    lastName: str
+    address: str
+    city: str
+    telephone: str
     id: Annotated[int | None, Id, GeneratedValue] = None
 
     def is_new(self) -> bool:
@@ -74,8 +75,8 @@ class Pet:
     fetch these non-null relationships when the UI needs them.
     """
 
-    name: Annotated[str, MappedProperty("NAME")]
-    birthDate: Annotated[LocalDate, MappedProperty("BIRTH_DATE")]
+    name: str
+    birthDate: LocalDate
     type: Annotated[PetType, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("TYPE_ID")]
     owner: Annotated[Owner, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("OWNER_ID")]
     id: Annotated[int | None, Id, GeneratedValue] = None
@@ -83,10 +84,10 @@ class Pet:
     def is_new(self) -> bool:
         return self.id is None
 
-    def getTypeId(self) -> int | None:
+    def get_type_id(self) -> int | None:
         return self.type.id if self.type is not None else None
 
-    def getOwnerId(self) -> int | None:
+    def get_owner_id(self) -> int | None:
         return self.owner.id if self.owner is not None else None
 
 
@@ -97,7 +98,7 @@ class Visit:
     """A veterinary visit for a pet."""
 
     date: Annotated[LocalDate, MappedProperty("VISIT_DATE")]
-    description: Annotated[str, MappedProperty("DESCRIPTION")]
+    description: str
     pet: Annotated[Pet, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("PET_ID")]
     id: Annotated[int | None, Id, GeneratedValue] = None
 
@@ -109,19 +110,19 @@ class Visit:
 @MappedEntity("VETS")
 @dataclass
 class Vet:
-    """A veterinarian. Specialties are joined through ``VetSpecialty``."""
+    """A veterinarian. Specialities are joined through ``VetSpeciality``."""
 
-    firstName: Annotated[str, MappedProperty("FIRST_NAME")]
-    lastName: Annotated[str, MappedProperty("LAST_NAME")]
+    firstName: str
+    lastName: str
     id: Annotated[int | None, Id, GeneratedValue] = None
 
 
 @Serdeable
-@MappedEntity("VET_SPECIALTIES")
+@MappedEntity("VET_SPECIALITIES")
 @dataclass
-class VetSpecialty:
-    """Join-table row linking a veterinarian to a specialty."""
+class VetSpeciality:
+    """Join-table row linking a veterinarian to a speciality."""
 
-    vetId: Annotated[int, MappedProperty("VET_ID")]
-    specialtyId: Annotated[int, MappedProperty("SPECIALTY_ID")]
+    vetId: int
+    specialityId: int
     id: Annotated[int | None, Id, GeneratedValue] = None
