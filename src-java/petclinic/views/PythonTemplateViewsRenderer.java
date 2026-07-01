@@ -18,8 +18,10 @@ public class PythonTemplateViewsRenderer implements ViewsRenderer<Object, Object
 
     @Override
     public Writable render(String viewName, Object data, Object request) {
-        String html = renderView.executeAsString(viewName, data);
-        return writer -> writer.write(html);
+        return writer -> {
+            String html = renderView.executeAsString(viewName, data);
+            writer.write(html);
+        };
     }
 
     @Override
