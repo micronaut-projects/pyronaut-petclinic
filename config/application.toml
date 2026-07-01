@@ -15,7 +15,7 @@ maximum-size = 100
 [datasources.default]
 db-type = 'oracle'
 driver-class-name = 'oracle.jdbc.OracleDriver'
-schema-generate = 'CREATE_DROP'
+schema-generate = 'CREATE'
 dialect = 'ORACLE'
 
 [petclinic.sample-data]

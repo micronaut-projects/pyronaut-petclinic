@@ -1,10 +1,4 @@
-"""Application entry point for the Pyronaut PetClinic sample.
-
-Pyronaut discovers Python modules that are imported from the application entry
-point. Importing ``petclinic.controllers`` registers the HTTP routes, and
-importing ``petclinic.seed`` registers the startup event listener that creates
-sample data. The rest of the application is reached through Micronaut bean
-injection from those modules.
+"""Logging configuration for Pyronaut PetClinic sample.
 """
 
 from logback.config import dictConfig
@@ -33,7 +27,3 @@ LOGGING = {
 
 dictConfig(LOGGING)
 
-# These imports are intentionally side-effectful: decorators in the imported
-# modules declare Micronaut beans, routes, and event listeners.
-import petclinic.controllers
-import petclinic.seed
