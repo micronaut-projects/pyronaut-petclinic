@@ -51,7 +51,7 @@ def render_view(view_name: str, model=None) -> str:
     path = _template_path(view_name)
     if not path.is_file():
         raise TemplateNotFoundError(f"Template not found: {view_name}")
-    body = Template(path.read_text(encoding="utf-8")).safe_substitute(_context_for(view_name, model))
+    body = _render_template(path, _context_for(view_name, model))
     if view_name == "layout":
         return body
     return layout(_title_for(view_name), body, view_name)
@@ -61,7 +61,7 @@ def layout(title: str, body: str, active: str = "") -> str:
     """Wrap page content in the shared PetClinic layout."""
 
     path = _template_path("_layout")
-    return Template(path.read_text(encoding="utf-8")).safe_substitute({
+    return _render_template(path, {
         "title": h(title),
         "body": body,
         "owners_active": "active" if active.startswith("owners") else "",
@@ -72,6 +72,16 @@ def layout(title: str, body: str, active: str = "") -> str:
 
 def _template_path(view_name: str) -> Path:
     return VIEWS / f"{view_name}.html.template"
+
+
+def _fragment(name: str, context: dict | None = None) -> str:
+    """Render a reusable HTML fragment from ``views/fragments``."""
+
+    return _render_template(VIEWS / "fragments" / f"{name}.html.template", context or {})
+
+
+def _render_template(path: Path, context: dict) -> str:
+    return Template(path.read_text(encoding="utf-8")).safe_substitute(context)
 
 
 def _to_dict(model) -> dict:
@@ -133,18 +143,13 @@ def _invalid_class(errors: dict, field: str) -> str:
 def _validation_summary(errors: dict) -> str:
     if not errors:
         return ""
-    return '<div class="alert alert-danger" role="alert">Please fix the errors below.</div>'
+    return _fragment("validation-summary")
 
 
 def _find_owners_context(model: dict) -> dict:
     alert = ""
     if bool(model.get("notFound")):
-        alert = (
-            '<div class="alert alert-warning animate-fade-in-up">'
-            '<i class="fas fa-exclamation-triangle"></i>'
-            "Try a different search or add a new owner"
-            "</div>"
-        )
+        alert = _fragment("find-not-found-alert")
     owner = model.get("owner")
     return {"not_found": alert, "last_name": h(_get(owner, "lastName", ""))}
 
@@ -154,18 +159,7 @@ def _owners_list_context(model: dict) -> dict:
     if not owners:
         return {
             "owner_count": "0",
-            "owners_content": """
-<div class="empty-state">
-    <div class="empty-state-icon">
-        <i class="fas fa-users-slash"></i>
-    </div>
-    <h3>No Owners Found</h3>
-    <p>We couldn't find any owners matching your search criteria.</p>
-    <a href="/owners/new" class="btn btn-success">
-        <i class="fas fa-plus me-2"></i>Add New Owner
-    </a>
-</div>
-""",
+            "owners_content": _fragment("owners-empty"),
         }
 
     cards = []
@@ -173,184 +167,57 @@ def _owners_list_context(model: dict) -> dict:
         pets = _get(owner, "pets", []) or []
         if pets:
             pets_html = "".join(
-                f'<span class="pet-badge"><i class="fas fa-paw"></i>{h(_get(pet, "name"))}</span>'
+                _fragment("pet-badge", {"name": h(_get(pet, "name"))})
                 for pet in pets
             )
         else:
-            pets_html = '<span class="text-muted small"><i class="fas fa-info-circle me-1"></i>No pets registered</span>'
-        cards.append(
-            f"""
-<div class="col-md-6 col-lg-4">
-    <div class="owner-card animate-fade-in-up">
-        <div class="d-flex align-items-start mb-3">
-            <div class="owner-avatar me-3">
-                <span>{_owner_initials(owner)}</span>
-            </div>
-            <div class="flex-grow-1">
-                <h5 class="mb-1">
-                    <a href="/owners/{_get(owner, "id")}" class="text-decoration-none text-dark">
-                        {h(_get(owner, "firstName"))} {h(_get(owner, "lastName"))}
-                    </a>
-                </h5>
-                <p class="text-muted mb-0 small">
-                    <i class="fas fa-map-marker-alt me-1"></i>{h(_get(owner, "city"))}
-                </p>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <p class="mb-1 small text-muted">
-                <i class="fas fa-home me-2"></i>{h(_get(owner, "address"))}
-            </p>
-            <p class="mb-0 small text-muted">
-                <i class="fas fa-phone me-2"></i>{h(_get(owner, "telephone"))}
-            </p>
-        </div>
-
-        <div class="mb-3">
-            <div class="d-flex flex-wrap">
-                {pets_html}
-            </div>
-        </div>
-
-        <a href="/owners/{_get(owner, "id")}" class="btn btn-primary btn-sm w-100">
-            <i class="fas fa-eye me-2"></i>View Details
-        </a>
-    </div>
-</div>
-"""
-        )
-    return {"owner_count": h(len(owners)), "owners_content": f'<div class="row g-4">{"".join(cards)}</div>'}
+            pets_html = _fragment("no-pets-registered")
+        cards.append(_fragment("owner-card", {
+            "owner_id": h(_get(owner, "id")),
+            "initials": _owner_initials(owner),
+            "first_name": h(_get(owner, "firstName")),
+            "last_name": h(_get(owner, "lastName")),
+            "city": h(_get(owner, "city")),
+            "address": h(_get(owner, "address")),
+            "telephone": h(_get(owner, "telephone")),
+            "pets_html": pets_html,
+        }))
+    return {"owner_count": h(len(owners)), "owners_content": _fragment("card-row", {"content": "".join(cards)})}
 
 
 def _owner_details_context(model: dict) -> dict:
     owner = model.get("owner")
     if owner is None:
-        return {"owner_block": '<div class="alert alert-warning">Owner not found</div>'}
+        return {"owner_block": _fragment("owner-not-found")}
     pets = model.get("pets", [])
     if not pets:
-        pets_block = f"""
-<div class="text-center py-5">
-    <div class="empty-state-icon mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
-        <i class="fas fa-paw"></i>
-    </div>
-    <h5>No Pets Yet</h5>
-    <p class="text-muted">This owner hasn't registered any pets.</p>
-    <a href="/owners/{owner.id}/pets/new" class="btn btn-success">
-        <i class="fas fa-plus me-2"></i>Add First Pet
-    </a>
-</div>
-"""
+        pets_block = _fragment("owner-no-pets", {"owner_id": h(owner.id)})
     else:
         pet_cards = []
         for pet in pets:
             visits = _visit_timeline(_get(pet, "visits", []))
-            pet_cards.append(
-                f"""
-<div class="pet-card mb-3">
-    <div class="row align-items-center">
-        <div class="col-md-4">
-            <div class="d-flex align-items-center">
-                {_pet_icon(pet, "me-3")}
-                <div>
-                    <h6 class="mb-0">{h(_get(pet, "name"))}</h6>
-                    <small class="text-muted">{h(_pet_type_name(pet))}</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <small class="text-muted d-block">Birth Date</small>
-            <span>{h(_get(pet, "birthDate", ""))}</span>
-        </div>
-        <div class="col-md-5 text-md-end mt-3 mt-md-0">
-            <a href="/owners/{owner.id}/pets/{_get(pet, "id")}/edit" class="btn btn-sm btn-outline-primary me-2">
-                <i class="fas fa-edit"></i> Edit
-            </a>
-            <a href="/owners/{owner.id}/pets/{_get(pet, "id")}/visits/new" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus"></i> Add Visit
-            </a>
-        </div>
-    </div>
-    {visits}
-</div>
-"""
-            )
+            pet_cards.append(_fragment("pet-detail-card", {
+                "owner_id": h(owner.id),
+                "pet_id": h(_get(pet, "id")),
+                "pet_icon": _pet_icon(pet, "me-3"),
+                "pet_name": h(_get(pet, "name")),
+                "pet_type": h(_pet_type_name(pet)),
+                "birth_date": h(_get(pet, "birthDate", "")),
+                "visits": visits,
+            }))
         pets_block = "".join(pet_cards)
 
-    for pet in model.get("pets", []):
-        visits = "".join(
-            f"<tr><td>{h(_get(visit, 'date'))}</td><td>{h(_get(visit, 'description'))}</td></tr>"
-            for visit in _get(pet, "visits", [])
-        ) or '<tr><td colspan="2">No visits yet</td></tr>'
-    block = f"""
-<div class="page-header">
-    <div class="container">
-        <div class="d-flex align-items-center">
-            <div class="detail-avatar me-4">
-                <span>{_owner_initials(owner)}</span>
-            </div>
-            <div>
-                <h1>{h(owner.firstName)} {h(owner.lastName)}</h1>
-                <p class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>{h(owner.city)}</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<main class="container flex-grow-1 py-4">
-    <a href="/owners/find" class="btn btn-secondary mb-4">
-        <i class="fas fa-arrow-left me-2"></i>Back to Search
-    </a>
-
-    <div class="row g-4">
-        <div class="col-lg-4">
-            <div class="detail-card animate-fade-in-up">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Owner Information</h5>
-                </div>
-                <div class="detail-body">
-                    <div class="info-row">
-                        <div class="info-label"><i class="fas fa-user me-2"></i>Name</div>
-                        <div class="info-value">{h(owner.firstName)} {h(owner.lastName)}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label"><i class="fas fa-home me-2"></i>Address</div>
-                        <div class="info-value">{h(owner.address)}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label"><i class="fas fa-city me-2"></i>City</div>
-                        <div class="info-value">{h(owner.city)}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label"><i class="fas fa-phone me-2"></i>Phone</div>
-                        <div class="info-value">{h(owner.telephone)}</div>
-                    </div>
-
-                    <div class="d-flex gap-2 mt-4">
-                        <a href="/owners/{owner.id}/edit" class="btn btn-primary flex-grow-1">
-                            <i class="fas fa-edit me-2"></i>Edit
-                        </a>
-                        <a href="/owners/{owner.id}/pets/new" class="btn btn-success flex-grow-1">
-                            <i class="fas fa-plus me-2"></i>Add Pet
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-8">
-            <div class="card animate-fade-in-up stagger-1">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-paw me-2"></i>Pets & Visits</h5>
-                    <span class="badge bg-white text-primary">{h(len(pets))} pets</span>
-                </div>
-                <div class="card-body">
-                    {pets_block}
-                </div>
-            </div>
-        </div>
-    </div>
-</main>
-"""
+    block = _fragment("owner-details", {
+        "owner_id": h(owner.id),
+        "initials": _owner_initials(owner),
+        "first_name": h(owner.firstName),
+        "last_name": h(owner.lastName),
+        "address": h(owner.address),
+        "city": h(owner.city),
+        "telephone": h(owner.telephone),
+        "pet_count": h(len(pets)),
+        "pets_block": pets_block,
+    })
     return {"owner_block": block}
 
 
@@ -413,7 +280,7 @@ def _pet_form_context(model: dict) -> dict:
             "name_error": "",
             "birth_error": "",
             "type_feedback": "",
-            "type_error": f'<div class="alert alert-warning">{message}</div>',
+            "type_error": _fragment("warning-alert", {"message": message}),
         }
     pet = model.get("pet")
     owner = model.get("owner")
@@ -426,7 +293,11 @@ def _pet_form_context(model: dict) -> dict:
     options = []
     for pet_type in model.get("types", []):
         selected = " selected" if pet_type.id == type_id else ""
-        options.append(f'<option value="{pet_type.id}"{selected}>{h(pet_type.name)}</option>')
+        options.append(_fragment("type-option", {
+            "value": h(pet_type.id),
+            "selected": selected,
+            "label": h(pet_type.name),
+        }))
     return {
         "form_action": h(action),
         "back_url": h(f"/owners/{owner_id}"),
@@ -460,7 +331,7 @@ def _visit_form_context(model: dict) -> dict:
             "back_url": "/owners/find",
             "owner_name": "",
             "pet_name": "",
-            "pet_information": f'<div class="alert alert-warning">{message}</div>',
+            "pet_information": _fragment("warning-alert", {"message": message}),
             "visit_date": "",
             "description": "",
             "validation_summary": "",
@@ -477,46 +348,20 @@ def _visit_form_context(model: dict) -> dict:
     visits = _get(pet, "visits", []) or []
     previous_visits = ""
     if visits:
-        previous_visits = f"""
-<div class="card mt-4 animate-fade-in-up stagger-1">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Previous Visits</h5>
-    </div>
-    <div class="card-body">
-        {_visit_timeline_list(visits)}
-    </div>
-</div>
-"""
-    pet_information = f"""
-<div class="detail-card animate-fade-in-up">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-paw me-2"></i>Pet Information</h5>
-    </div>
-    <div class="detail-body">
-        <div class="text-center mb-4">
-            {_pet_icon(pet, "mx-auto mb-3", 'style="width: 80px; height: 80px; font-size: 2rem;"')}
-            <h5>{h(_get(pet, "name"))}</h5>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Type</div>
-            <div class="info-value">{h(_pet_type_name(pet))}</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Birth Date</div>
-            <div class="info-value">{h(_get(pet, "birthDate", ""))}</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Owner</div>
-            <div class="info-value">{h(getattr(owner, "firstName", ""))} {h(getattr(owner, "lastName", ""))}</div>
-        </div>
-    </div>
-</div>
-{previous_visits}
-"""
+        previous_visits = _fragment("previous-visits", {"visits": _visit_timeline_list(visits)})
+    owner_name = f"{h(getattr(owner, 'firstName', ''))} {h(getattr(owner, 'lastName', ''))}"
+    pet_information = _fragment("visit-pet-information", {
+        "pet_icon": _pet_icon(pet, "mx-auto mb-3", 'style="width: 80px; height: 80px; font-size: 2rem;"'),
+        "pet_name": h(_get(pet, "name")),
+        "pet_type": h(_pet_type_name(pet)),
+        "birth_date": h(_get(pet, "birthDate", "")),
+        "owner_name": owner_name,
+        "previous_visits": previous_visits,
+    })
     return {
         "form_action": h(action),
         "back_url": h(f"/owners/{getattr(owner, 'id', '')}"),
-        "owner_name": f"{h(getattr(owner, 'firstName', ''))} {h(getattr(owner, 'lastName', ''))}",
+        "owner_name": owner_name,
         "pet_name": h(getattr(pet, "name", "")),
         "pet_information": pet_information,
         "visit_date": h(getattr(visit, "date", "") or ""),
@@ -534,56 +379,24 @@ def _vet_list_context(model: dict) -> dict:
     if not vets:
         return {
             "vet_count": "0",
-            "vets_content": """
-<div class="empty-state">
-    <div class="empty-state-icon">
-        <i class="fas fa-user-md"></i>
-    </div>
-    <h3>No Veterinarians Found</h3>
-    <p>There are no veterinarians registered in the system yet.</p>
-</div>
-""",
+            "vets_content": _fragment("vets-empty"),
         }
     cards = []
     for vet in vets:
         specialities = _get(vet, "specialitiesAsString")
         if specialities and specialities != "none":
             speciality_html = "".join(
-                f'<span class="speciality-badge">{h(s.strip())}</span>'
+                _fragment("speciality-badge", {"name": h(s.strip())})
                 for s in str(specialities).split(",")
             )
         else:
-            speciality_html = '<span class="speciality-badge">General Practice</span>'
-        cards.append(
-            f"""
-<div class="col-md-6 col-lg-4">
-    <div class="vet-card animate-fade-in-up">
-        <div class="vet-card-header">
-            <div class="vet-avatar">
-                <i class="fas fa-user-md"></i>
-            </div>
-        </div>
-        <div class="vet-card-body">
-            <h5>{h(_get(vet, "firstName"))} {h(_get(vet, "lastName"))}</h5>
-            <div class="mt-3">
-                {speciality_html}
-            </div>
-            <div class="mt-4 pt-3 border-top">
-                <div class="d-flex justify-content-center gap-3">
-                    <span class="text-muted small">
-                        <i class="fas fa-certificate text-warning me-1"></i>Licensed
-                    </span>
-                    <span class="text-muted small">
-                        <i class="fas fa-star text-warning me-1"></i>Top Rated
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-"""
-        )
-    return {"vet_count": h(len(vets)), "vets_content": f'<div class="row g-4">{"".join(cards)}</div>'}
+            speciality_html = _fragment("speciality-badge", {"name": "General Practice"})
+        cards.append(_fragment("vet-card", {
+            "first_name": h(_get(vet, "firstName")),
+            "last_name": h(_get(vet, "lastName")),
+            "specialities": speciality_html,
+        }))
+    return {"vet_count": h(len(vets)), "vets_content": _fragment("card-row", {"content": "".join(cards)})}
 
 
 def _owner_initials(owner) -> str:
@@ -609,32 +422,28 @@ def _pet_icon(pet, extra_class: str = "", extra_attrs: str = "") -> str:
     }.get(pet_type, "fa-dog")
     css_type = pet_type if pet_type in {"cat", "dog", "bird", "hamster", "snake", "lizard"} else "dog"
     attrs = f" {extra_attrs}" if extra_attrs else ""
-    return f'<div class="pet-icon {h(css_type)} {h(extra_class)}"{attrs}><i class="fas {icon}"></i></div>'
+    return _fragment("pet-icon", {
+        "type": h(css_type),
+        "extra_class": h(extra_class),
+        "extra_attrs": attrs,
+        "icon": icon,
+    })
 
 
 def _visit_timeline(visits) -> str:
     if not visits:
         return ""
-    return f"""
-<div class="mt-3 pt-3 border-top">
-    <h6 class="text-muted mb-3"><i class="fas fa-calendar-alt me-2"></i>Visit History</h6>
-    {_visit_timeline_list(visits)}
-</div>
-"""
+    return _fragment("visit-timeline", {"visits": _visit_timeline_list(visits)})
 
 
 def _visit_timeline_list(visits) -> str:
     items = []
     for visit in visits:
-        items.append(
-            f"""
-<div class="visit-item">
-    <div class="visit-date">{h(_get(visit, "date", ""))}</div>
-    <div class="visit-description">{h(_get(visit, "description", ""))}</div>
-</div>
-"""
-        )
-    return f'<div class="visit-timeline">{"".join(items)}</div>'
+        items.append(_fragment("visit-item", {
+            "date": h(_get(visit, "date", "")),
+            "description": h(_get(visit, "description", "")),
+        }))
+    return _fragment("visit-timeline-list", {"items": "".join(items)})
 
 
 def _get(value, key: str, default=None):

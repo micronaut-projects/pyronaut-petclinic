@@ -1,0 +1,10 @@
+<div class="text-center py-5">
+    <div class="empty-state-icon mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+        <i class="fas fa-paw"></i>
+    </div>
+    <h5>No Pets Yet</h5>
+    <p class="text-muted">This owner hasn't registered any pets.</p>
+    <a href="/owners/$owner_id/pets/new" class="btn btn-success">
+        <i class="fas fa-plus me-2"></i>Add First Pet
+    </a>
+</div>

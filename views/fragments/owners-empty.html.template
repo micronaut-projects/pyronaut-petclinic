@@ -1,0 +1,10 @@
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-users-slash"></i>
+    </div>
+    <h3>No Owners Found</h3>
+    <p>We couldn't find any owners matching your search criteria.</p>
+    <a href="/owners/new" class="btn btn-success">
+        <i class="fas fa-plus me-2"></i>Add New Owner
+    </a>
+</div>
