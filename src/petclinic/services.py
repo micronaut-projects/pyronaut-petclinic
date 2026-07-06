@@ -27,21 +27,6 @@ from .repositories import (
 )
 
 
-def _optional_value(optional):
-    """Normalize Java ``Optional`` and direct/null repository results.
-
-    Some generated repository methods return Java ``Optional`` and others return
-    a nullable entity directly. This helper lets the service expose idiomatic
-    ``T | None`` return types either way.
-    """
-
-    if optional is None:
-        return None
-    if hasattr(optional, "orElse"):
-        return optional.orElse(None)
-    return optional
-
-
 @Prototype
 class ClinicService:
     """Facade over repositories for PetClinic workflows."""
@@ -56,7 +41,7 @@ class ClinicService:
     def find_owner_by_id(self, owner_id: int) -> Owner | None:
         """Return one owner or ``None`` when no row exists."""
 
-        return _optional_value(self.owner_repository.findById(owner_id))
+        return self.owner_repository.findById(owner_id).orElse(None)
 
     def find_owner_by_last_name(self, last_name: str) -> list[Owner]:
         return list(self.owner_repository.findByLastName(last_name))
@@ -79,7 +64,7 @@ class ClinicService:
         return list(self.pet_type_repository.findAllOrderByName())
 
     def find_pet_type_by_id(self, type_id: int) -> PetType | None:
-        return _optional_value(self.pet_type_repository.findById(type_id))
+        return self.pet_type_repository.findById(type_id).orElse(None)
 
     @Transactional
     def save_pet(self, pet: Pet) -> Pet:
