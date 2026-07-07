@@ -22,6 +22,13 @@ LOGGING = {
     "root": {
         "level": "INFO",
         "handlers": ["console"]
+    },
+    "loggers": {
+        "io.micronaut.web.router": {
+            # change to TRACE to view HTTP routes
+            "level": "INFO",
+            "handlers": ["console", "file"]
+        }
     }
 }
 

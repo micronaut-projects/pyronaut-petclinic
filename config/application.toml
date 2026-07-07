@@ -23,4 +23,4 @@ enabled = true
 
 [logger.levels]
 petclinic = 'DEBUG'
-io.micronaut.data = 'INFO'
+io.micronaut.data.query = 'ERROR'
