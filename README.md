@@ -54,7 +54,7 @@ This resolves runtime, build, test, and development dependencies into the local 
 ## Run
 
 ```bash
-pyronaut run
+pyronaut dev
 ```
 
 The application starts on the default Micronaut port, usually `http://localhost:8080`.
