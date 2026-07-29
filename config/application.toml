@@ -15,8 +15,12 @@ folder = '.'
 
 [micronaut.router.static-resources.default]
 enabled = true
-mapping = '/resources/**'
+mapping = '/static/**'
 paths = ['file:static']
+
+[micronaut.views.react]
+server-bundle-path = 'classpath:views/ssr-components.mjs'
+client-bundle-url = '/static/client.js'
 
 [micronaut.caches.vets]
 expire-after-write = '60s'
@@ -30,7 +34,3 @@ dialect = 'ORACLE'
 
 [flyway.datasources.default]
 enabled = true
-
-[logger.levels]
-petclinic = 'DEBUG'
-io.micronaut.data.query = 'ERROR'

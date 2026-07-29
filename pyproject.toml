@@ -17,8 +17,8 @@ type = 'native'
 
 [tool.pyronaut]
 repositories = ['mavenCentral']
-core.version = '5.1.0-SNAPSHOT'
-platform.version = '5.1.0'
+core.version = '5.2.0-SNAPSHOT'
+platform.version = '5.0.0'
 
 [tool.pyronaut.control-panel]
 enabled = true
@@ -26,7 +26,6 @@ enabled = true
 [tool.pyronaut.sources]
 python = 'src'
 python-test = 'tests'
-java = 'src-java'
 resources = 'config'
 test-resources = 'tests-config'
 additional-resources = ['views', 'static']
@@ -40,14 +39,13 @@ runtime = [
   'io.micronaut:micronaut-http-server-netty',
   'io.micronaut.cache:micronaut-cache-core',
   'io.micronaut.data:micronaut-data-jdbc',
-  'io.micronaut.flyway:micronaut-flyway',
   'io.micronaut.serde:micronaut-serde-jackson',
-  "com.fasterxml.jackson.core:jackson-databind:2.22.1",
   'io.micronaut.sql:micronaut-jdbc-ucp',
   'io.micronaut.validation:micronaut-validation',
-  'io.micronaut.views:micronaut-views-jinjava',
+  'io.micronaut.pyronaut:micronaut-pyronaut-views-react',
+  'io.micronaut.views:micronaut-views-react:6.3.0-SNAPSHOT',
+  'org.graalvm.polyglot:js-community:25.1.3',
   'com.oracle.database.jdbc:ojdbc11',
-  'org.flywaydb:flyway-database-oracle',
   'io.micronaut.pyronaut:micronaut-pyronaut-logback'
 ]
 development-runtime = [

@@ -41,7 +41,7 @@ class ClinicService:
     def find_owner_by_id(self, owner_id: int) -> Owner | None:
         """Return one owner or ``None`` when no row exists."""
 
-        return self.owner_repository.findOneById(owner_id)
+        return self.owner_repository.findById(owner_id).orElse(None)
 
     def find_owner_by_last_name(self, last_name: str) -> list[Owner]:
         return list(self.owner_repository.findByLastName(last_name))
@@ -64,7 +64,7 @@ class ClinicService:
         return list(self.pet_type_repository.findAllOrderByName())
 
     def find_pet_type_by_id(self, type_id: int) -> PetType | None:
-        return self.pet_type_repository.findOneById(type_id)
+        return self.pet_type_repository.findById(type_id).orElse(None)
 
     @Transactional
     def save_pet(self, pet: Pet) -> Pet:
@@ -91,8 +91,9 @@ class ClinicService:
     def owner_detail_model(self, owner: Owner) -> list[dict]:
         """Build the view model used by the owner details template.
 
-        The service shapes nested owner, pet, and visit data into dictionaries
-        that are easy for the Jinjava templates to consume.
+        Templates are deliberately simple string templates, so the service
+        shapes nested owner, pet, and visit data into dictionaries that are
+        easy for the renderer to consume.
         """
 
         if owner.id is None:
@@ -101,17 +102,70 @@ class ClinicService:
         loaded_pets = list(self.pet_repository.findByOwnerIdOrderByName(owner.id))
         for pet in loaded_pets:
             visits = [
-                {"id": visit.id, "date": str(visit.date or ""), "description": visit.description}
+                {
+                    "id": visit.id,
+                    "date": str(visit.date) if visit.date is not None else None,
+                    "description": visit.description,
+                }
                 for visit in self.visit_repository.findByPetIdOrderByDateDesc(pet.id)
             ]
             pets.append({
                 "id": pet.id,
                 "name": pet.name,
-                "birthDate": str(pet.birthDate or ""),
+                "birthDate": str(pet.birthDate) if pet.birthDate is not None else None,
                 "type": pet.type.name if pet.type is not None else "",
                 "visits": sorted(visits, key=lambda visit: str(visit["date"] or "")),
             })
         return sorted(pets, key=lambda pet: pet["name"].lower())
+
+    @staticmethod
+    def owner_summary_model(owner: Owner) -> dict:
+        """Return an owner model containing JSON/React-safe scalar values."""
+
+        return {
+            "id": owner.id,
+            "firstName": owner.firstName,
+            "lastName": owner.lastName,
+            "address": owner.address,
+            "city": owner.city,
+            "telephone": owner.telephone,
+        }
+
+    def owner_model(self, owner: Owner, include_pets: bool = False) -> dict:
+        model = self.owner_summary_model(owner)
+        if include_pets:
+            model["pets"] = self.owner_detail_model(owner)
+        return model
+
+    def pet_model(self, pet: Pet, include_visits: bool = False) -> dict:
+        model = {
+            "id": pet.id,
+            "name": pet.name,
+            "birthDate": str(pet.birthDate) if pet.birthDate is not None else None,
+            "typeId": pet.type.id if pet.type is not None else None,
+            "type": pet.type.name if pet.type is not None else "",
+            "ownerId": pet.owner.id if pet.owner is not None else None,
+        }
+        if include_visits and pet.id is not None:
+            model["visits"] = [
+                self.visit_model(visit)
+                for visit in self.find_visits_by_pet_id(pet.id)
+            ]
+        return model
+
+    @staticmethod
+    def visit_model(visit: Visit) -> dict:
+        return {
+            "id": visit.id,
+            "date": str(visit.date) if visit.date is not None else None,
+            "description": visit.description,
+        }
+
+    def pet_type_models(self) -> list[dict]:
+        return [
+            {"id": pet_type.id, "name": pet_type.name}
+            for pet_type in self.find_pet_types()
+        ]
 
     def vet_models(self) -> list[dict]:
         """Build both HTML and JSON representations for veterinarian lists."""

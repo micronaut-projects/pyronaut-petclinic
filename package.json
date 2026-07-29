@@ -1,0 +1,36 @@
+{
+  "name": "pyronaut-petclinic-react",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "webpack --mode production --config webpack.server.cjs && webpack --mode production --config webpack.client.cjs",
+    "watch": "webpack --mode development --watch --config webpack.server.cjs & webpack --mode development --watch --config webpack.client.cjs",
+    "test": "jest"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-router-dom": "6.30.1",
+    "text-encoding": "0.7.0",
+    "web-streams-polyfill": "4.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.28.0",
+    "@babel/preset-env": "7.28.0",
+    "@babel/preset-react": "7.27.1",
+    "@testing-library/jest-dom": "6.6.4",
+    "@testing-library/react": "16.3.0",
+    "babel-jest": "30.0.5",
+    "babel-loader": "10.0.0",
+    "jest": "30.0.5",
+    "jest-environment-jsdom": "30.0.5",
+    "webpack": "5.101.0",
+    "webpack-cli": "6.0.1"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "transform": {
+      "^.+\\.[jt]sx?$": "babel-jest"
+    }
+  }
+}

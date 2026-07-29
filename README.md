@@ -1,86 +1,52 @@
 # Pyronaut PetClinic
 
-This repository is a Pyronaut port of the Micronaut PetClinic sample application. It demonstrates how to build a Python application on Micronaut using Pyronaut, Micronaut Data JDBC, Micronaut Views, validation, test resources, and an Oracle database.
+This PetClinic implementation is a Python JSON API plus a React 18 single-page application.
+Micronaut Views React server-renders the initial document, and the browser hydrates the same route
+tree. In Pyronaut, React rendering leases the Python-owned polyglot contexts, so GraalPy and
+GraalJS run in one VM without a separate React engine or context pool.
 
-## What This Sample Shows
-
-- Python controllers, entities, repositories, and services running in a Micronaut application.
-- Micronaut Data JDBC repositories backed by Oracle.
-- Micronaut validation annotations on Python form objects.
-- Micronaut `@Mapper` usage for form-to-entity mapping.
-- Server-side HTML rendering through Micronaut Views Jinjava templates.
-- Static resources served from the `static/` resource directory.
-- Oracle Test Resources provisioning for local tests and development runs.
-- Pytest integration through `micronaut-pyronaut-pytest`.
-- The Micronaut Control Panel in development mode.
+The application keeps the familiar browser URLs (`/owners/find`, `/owners/{id}`, `/vets`, and the
+pet/visit form URLs). Data operations use `/api/**`; `/vets/json` remains as a compatibility alias.
 
 ## Requirements
 
-- A recent Pyronaut SDK installed from the matching Pyronaut development branch.
-- Docker or a compatible container runtime for Oracle Test Resources.
-- Java/GraalVM requirements as expected by the installed Pyronaut SDK.
+- A Pyronaut SDK containing `micronaut-pyronaut-views-react`
+- GraalPy 25.x and GraalJS Community (selected in `pyproject.toml`)
+- Node.js and npm
+- Docker or another Test Resources-compatible container runtime for Oracle
 
-The project is configured for the JVM Pyronaut toolchain:
-
-```toml
-[tool.pyronaut.toolchain]
-type = 'jvm'
-```
-
-## Project Layout
-
-```text
-config/          Micronaut application configuration
-src/             Python application code
-static/          Static web assets
-tests/           Pytest test suite
-tests-config/    Test-specific Micronaut configuration
-views/           HTML template files
-```
-
-Generated files are written under `__pyronaut__/` and local Test Resources state is written under `.micronaut/`. Both directories are intentionally ignored by Git.
-
-## Install Dependencies
-
-From the repository root:
+## Build and test
 
 ```bash
+npm ci
+npm test
+npm run build
 pyronaut install
-```
-
-This resolves runtime, build, test, and development dependencies into the local Pyronaut cache directory.
-
-## Run
-
-```bash
-pyronaut dev
-```
-
-The application starts on the default Micronaut port, usually `http://localhost:8080`.
-
-Useful routes:
-
-- `http://localhost:8080/`
-- `http://localhost:8080/owners/find`
-- `http://localhost:8080/vets`
-- `http://localhost:8080/vets/json`
-- `http://localhost:8080/control-panel`
-- `http://localhost:8080/health`
-
-## Test
-
-```bash
 pyronaut test
 ```
 
-The tests start the application with Oracle supplied by Micronaut Test Resources. The suite covers seed data, owners, pets, visits, vets, JSON output, form flows, not-found behavior, and template rendering.
+The JavaScript bundles are generated and intentionally not committed. `npm run build` writes the
+server bundle to `views/ssr-components.mjs` and the hydration bundle to `static/client.js`.
 
-## Database
+For development, run the JavaScript watcher and Pyronaut development server in separate terminals:
 
-Oracle is the only configured database dialect for this sample. The application omits fixed datasource URLs and credentials so Micronaut Test Resources can provide them during local runs and tests.
+```bash
+npm run watch
+pyronaut dev
+```
 
-Relevant configuration lives in `config/application.toml` and `tests-config/application-test.toml`.
+Static assets are served from `/static/**`. React Views uses
+`classpath:views/ssr-components.mjs` for SSR and `/static/client.js` for hydration.
 
-## Template Rendering
+## HTTP API
 
-Micronaut controllers use `@View` and the Micronaut Views Jinjava renderer. Templates live in `views/`, use the `.jinja` extension, and compose pages with Jinja inheritance and includes. Dynamic values are escaped by the templates using Jinjava's HTML escaping filters.
+- `GET|POST /api/owners`
+- `GET|PUT /api/owners/{ownerId}`
+- `GET /api/pet-types`
+- `POST /api/owners/{ownerId}/pets`
+- `GET|PUT /api/owners/{ownerId}/pets/{petId}`
+- `POST /api/owners/{ownerId}/pets/{petId}/visits`
+- `GET /api/vets`
+
+Validation failures return HTTP 422 with `{message, errors}`. Nested pet and visit routes validate
+that the resource belongs to the owner named in the URL.
