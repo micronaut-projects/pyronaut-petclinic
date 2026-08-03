@@ -28,6 +28,8 @@ from .entities import Owner, Pet, PetType, Speciality, Vet, VetSpeciality, VetWi
 class OwnerRepository(CrudRepository[Owner, int], Protocol):
     """Owner queries used by search and list screens."""
 
+    def findOneById(self, id: int) -> Owner | None: ...
+
     @Query("SELECT * FROM OWNERS ORDER BY LAST_NAME", nativeQuery=True)
     def findAllOrdered(self) -> list[Owner]: ...
 
@@ -51,6 +53,8 @@ class PetRepository(CrudRepository[Pet, int], Protocol):
 @JdbcRepository(dialect=Dialect.ORACLE)
 class PetTypeRepository(CrudRepository[PetType, int], Protocol):
     """Lookup repository for pet types shown in form select boxes."""
+
+    def findOneById(self, id: int) -> PetType | None: ...
 
     @Query("SELECT * FROM PET_TYPES ORDER BY NAME", nativeQuery=True)
     def findAllOrderByName(self) -> list[PetType]: ...

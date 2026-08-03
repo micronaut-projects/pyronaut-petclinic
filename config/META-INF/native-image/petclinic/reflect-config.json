@@ -1,0 +1,38 @@
+[
+  {
+    "name": "io.micronaut.validation.validator.DefaultValidator",
+    "methods": [
+      {
+        "name": "validate",
+        "parameterTypes": ["java.lang.Object", "java.lang.Class[]"]
+      }
+    ]
+  },
+  {
+    "name": "ch.qos.logback.core.ConsoleAppender",
+    "methods": [
+      {
+        "name": "setTarget",
+        "parameterTypes": ["java.lang.String"]
+      }
+    ]
+  },
+  {
+    "name": "java.net.URI",
+    "methods": [
+      {
+        "name": "create",
+        "parameterTypes": ["java.lang.String"]
+      }
+    ]
+  },
+  {
+    "name": "java.lang.System",
+    "methods": [
+      {
+        "name": "getenv",
+        "parameterTypes": ["java.lang.String"]
+      }
+    ]
+  }
+]

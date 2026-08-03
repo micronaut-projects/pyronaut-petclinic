@@ -41,7 +41,7 @@ class ClinicService:
     def find_owner_by_id(self, owner_id: int) -> Owner | None:
         """Return one owner or ``None`` when no row exists."""
 
-        return self.owner_repository.findById(owner_id).orElse(None)
+        return self.owner_repository.findOneById(owner_id)
 
     def find_owner_by_last_name(self, last_name: str) -> list[Owner]:
         return list(self.owner_repository.findByLastName(last_name))
@@ -64,7 +64,7 @@ class ClinicService:
         return list(self.pet_type_repository.findAllOrderByName())
 
     def find_pet_type_by_id(self, type_id: int) -> PetType | None:
-        return self.pet_type_repository.findById(type_id).orElse(None)
+        return self.pet_type_repository.findOneById(type_id)
 
     @Transactional
     def save_pet(self, pet: Pet) -> Pet:
