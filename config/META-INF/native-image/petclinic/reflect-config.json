@@ -9,6 +9,19 @@
     ]
   },
   {
+    "name": "io.micronaut.validation.validator.DefaultConstraintViolation",
+    "methods": [
+      {
+        "name": "getPropertyPath",
+        "parameterTypes": []
+      },
+      {
+        "name": "getMessage",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
     "name": "ch.qos.logback.core.ConsoleAppender",
     "methods": [
       {
