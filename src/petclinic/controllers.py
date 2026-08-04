@@ -15,11 +15,13 @@ Important concepts shown here:
   reaching into repositories directly.
 """
 
+from datetime import date
 from typing import Annotated
 
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from java.net import URI
+from java.time import LocalDate
 from micronaut.http import HttpResponse, MediaType
 from micronaut.http.annotation import Body, Get, Post, Produces, QueryValue
 from micronaut.views import View
@@ -54,7 +56,27 @@ def validation_errors(form) -> dict[str, str]:
             field = field.rsplit(".", 1)[-1]
         if field:
             errors[field] = str(violation.getMessage())
+    for field, label in (("birthDate", "Birth date"), ("date", "Visit date")):
+        value = getattr(form, field, None)
+        if value:
+            try:
+                date.fromisoformat(value)
+            except ValueError:
+                errors[field] = f"{label} must be a valid date"
     return errors
+
+
+def pet_type_for(form: PetForm, errors: dict[str, str]):
+    try:
+        return clinic_service.find_pet_type_by_id(int(form.typeId)) if form.typeId else None
+    except ValueError:
+        errors["typeId"] = "Invalid pet type"
+        return None
+
+
+def parse_form_date(value: str | None) -> LocalDate:
+    assert value is not None
+    return LocalDate.parse(value)
 
 
 @Get("/")
@@ -171,11 +193,12 @@ def process_pet_creation_form(ownerId: int, form: Annotated[PetForm, Body]):
     if owner is None:
         return HttpResponse.notFound()
     errors = validation_errors(form)
-    pet_type = clinic_service.find_pet_type_by_id(form.typeId) if form.typeId is not None else None
-    if form.typeId is not None and pet_type is None:
+    pet_type = pet_type_for(form, errors)
+    if form.typeId and pet_type is None:
         errors["typeId"] = "Invalid pet type"
     if errors:
         return {"pet": form, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True, "validationErrors": errors}
+    form.birthDateValue = parse_form_date(form.birthDate)
     pet = form_mapper.to_pet(form, owner, pet_type)
     clinic_service.save_pet(pet)
     return redirect_to(f"/owners/{ownerId}")
@@ -199,11 +222,12 @@ def process_pet_update_form(ownerId: int, petId: int, form: Annotated[PetForm, B
     if owner is None or pet is None:
         return HttpResponse.notFound()
     errors = validation_errors(form)
-    pet_type = clinic_service.find_pet_type_by_id(form.typeId) if form.typeId is not None else None
-    if form.typeId is not None and pet_type is None:
+    pet_type = pet_type_for(form, errors)
+    if form.typeId and pet_type is None:
         errors["typeId"] = "Invalid pet type"
     if errors:
         return {"pet": form, "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False, "validationErrors": errors}
+    form.birthDateValue = parse_form_date(form.birthDate)
     updated = form_mapper.update_pet(pet, form, owner, pet_type)
     clinic_service.save_pet(updated)
     return redirect_to(f"/owners/{ownerId}")
@@ -227,6 +251,7 @@ def process_visit_creation_form(ownerId: int, petId: int, form: Annotated[VisitF
     errors = validation_errors(form)
     if errors:
         return {"visit": form, "pet": pet, "owner": pet.owner, "validationErrors": errors}
+    form.dateValue = parse_form_date(form.date)
     visit = form_mapper.to_visit(form, pet)
     clinic_service.save_visit(visit)
     return redirect_to(f"/owners/{ownerId}")

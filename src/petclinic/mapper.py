@@ -40,7 +40,7 @@ class FormMapper(ABC):
 
     @Mapper.Mapping(from_="#{null}", to="id")
     @Mapper.Mapping(from_="#{form.name}", to="name")
-    @Mapper.Mapping(from_="#{form.birthDate}", to="birthDate")
+    @Mapper.Mapping(from_="#{form.birthDateValue}", to="birthDate")
     @Mapper.Mapping(from_="#{owner}", to="owner")
     @Mapper.Mapping(from_="#{pet_type}", to="type")
     @abstractmethod
@@ -49,7 +49,7 @@ class FormMapper(ABC):
 
     @Mapper.Mapping(from_="pet.id", to="id")
     @Mapper.Mapping(from_="#{form.name}", to="name")
-    @Mapper.Mapping(from_="#{form.birthDate}", to="birthDate")
+    @Mapper.Mapping(from_="#{form.birthDateValue}", to="birthDate")
     @Mapper.Mapping(from_="#{owner}", to="owner")
     @Mapper.Mapping(from_="#{pet_type}", to="type")
     @abstractmethod
@@ -62,6 +62,7 @@ class FormMapper(ABC):
         ...
 
     @Mapper.Mapping(from_="#{null}", to="id")
+    @Mapper.Mapping(from_="#{form.dateValue}", to="date")
     @Mapper.Mapping(from_="#{pet}", to="pet")
     @abstractmethod
     def to_visit(self, form: VisitForm, pet: Pet) -> Visit:

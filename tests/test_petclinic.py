@@ -120,6 +120,14 @@ def test_owner_pet_visit_form_flow(client):
     assert "dog" in types_page.text
     dog_type_id = re.search(r'<option value="(\d+)">dog</option>', types_page.text).group(1)
 
+    invalid_pet = client.post(
+        f"{owner_url}/pets/new",
+        data={"name": "", "birthDate": "", "typeId": ""},
+    )
+    assert invalid_pet.status_code == 200
+    assert "Birth date is required" in invalid_pet.text
+    assert "Pet type is required" in invalid_pet.text
+
     pet_created = client.post(
         f"{owner_url}/pets/new",
         data={"name": "Lauren", "birthDate": "2020-01-02", "typeId": dog_type_id},
@@ -132,6 +140,13 @@ def test_owner_pet_visit_form_flow(client):
     owner_id = owner_url.rsplit("/", 1)[-1]
     detail = client.get(owner_url).text
     pet_id = re.search(rf'/owners/{owner_id}/pets/(\d+)/edit', detail).group(1)
+
+    invalid_visit = client.post(
+        f"{owner_url}/pets/{pet_id}/visits/new",
+        data={"date": "", "description": ""},
+    )
+    assert invalid_visit.status_code == 200
+    assert "Visit date is required" in invalid_visit.text
 
     pet_edited = client.post(
         f"{owner_url}/pets/{pet_id}/edit",

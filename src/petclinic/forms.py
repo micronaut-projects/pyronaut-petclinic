@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from java.time import LocalDate
-from jakarta.validation.constraints import NotBlank, NotNull, Pattern, Size
+from jakarta.validation.constraints import NotBlank, Pattern, Size
 from micronaut.serde.annotation import Serdeable
 
 
@@ -42,8 +42,11 @@ class PetForm:
 
     id: int | None = None
     name: Annotated[str | None, NotBlank(message="Pet name is required"), Size(min=1, max=30, message="Pet name must be between 1 and 30 characters")] = None
-    birthDate: Annotated[LocalDate | None, NotNull(message="Birth date is required")] = None
-    typeId: Annotated[int | None, NotNull(message="Pet type is required")] = None
+    # HTML sends empty controls as strings. Keeping these as strings lets
+    # validation render the form again instead of failing body conversion.
+    birthDate: Annotated[str | None, NotBlank(message="Birth date is required")] = None
+    typeId: Annotated[str | None, NotBlank(message="Pet type is required")] = None
+    birthDateValue: LocalDate | None = None
 
 
 @Serdeable
@@ -52,5 +55,6 @@ class VisitForm:
     """Create form for ``Visit``."""
 
     id: int | None = None
-    date: Annotated[LocalDate | None, NotNull(message="Visit date is required")] = None
+    date: Annotated[str | None, NotBlank(message="Visit date is required")] = None
     description: Annotated[str | None, NotBlank(message="Description is required"), Size(min=1, max=255, message="Description must be between 1 and 255 characters")] = None
+    dateValue: LocalDate | None = None
