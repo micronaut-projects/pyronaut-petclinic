@@ -102,13 +102,13 @@ class ClinicService:
         loaded_pets = list(self.pet_repository.findByOwnerIdOrderByName(owner.id))
         for pet in loaded_pets:
             visits = [
-                {"id": visit.id, "date": visit.date, "description": visit.description}
+                {"id": visit.id, "date": str(visit.date or ""), "description": visit.description}
                 for visit in self.visit_repository.findByPetIdOrderByDateDesc(pet.id)
             ]
             pets.append({
                 "id": pet.id,
                 "name": pet.name,
-                "birthDate": pet.birthDate,
+                "birthDate": str(pet.birthDate or ""),
                 "type": pet.type.name if pet.type is not None else "",
                 "visits": sorted(visits, key=lambda visit: str(visit["date"] or "")),
             })

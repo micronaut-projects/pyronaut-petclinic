@@ -9,7 +9,7 @@
     ]
   },
   {
-    "name": "io.micronaut.validation.validator.DefaultConstraintViolation",
+    "name": "jakarta.validation.ConstraintViolation",
     "methods": [
       {
         "name": "getPropertyPath",
