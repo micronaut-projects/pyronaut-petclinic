@@ -1,0 +1,24 @@
+[
+  {
+    "name": "io.micronaut.validation.validator.DefaultValidator",
+    "methods": [
+      {
+        "name": "validate",
+        "parameterTypes": ["java.lang.Object", "java.lang.Class[]"]
+      }
+    ]
+  },
+  {
+    "name": "jakarta.validation.ConstraintViolation",
+    "methods": [
+      {
+        "name": "getPropertyPath",
+        "parameterTypes": []
+      },
+      {
+        "name": "getMessage",
+        "parameterTypes": []
+      }
+    ]
+  }
+]

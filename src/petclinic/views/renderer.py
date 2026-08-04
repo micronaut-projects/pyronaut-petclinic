@@ -292,7 +292,7 @@ def _pet_form_context(model: dict) -> dict:
     type_id = _get(pet, "typeId")
     options = []
     for pet_type in model.get("types", []):
-        selected = " selected" if pet_type.id == type_id else ""
+        selected = " selected" if str(pet_type.id) == str(type_id) else ""
         options.append(_fragment("type-option", {
             "value": h(pet_type.id),
             "selected": selected,
