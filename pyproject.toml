@@ -40,11 +40,13 @@ runtime = [
   'io.micronaut:micronaut-http-server-netty',
   'io.micronaut.cache:micronaut-cache-core',
   'io.micronaut.data:micronaut-data-jdbc',
+  'io.micronaut.flyway:micronaut-flyway',
   'io.micronaut.serde:micronaut-serde-jackson',
   'io.micronaut.sql:micronaut-jdbc-ucp',
   'io.micronaut.validation:micronaut-validation',
   'io.micronaut.views:micronaut-views-core',
   'com.oracle.database.jdbc:ojdbc11',
+  'org.flywaydb:flyway-database-oracle',
   'io.micronaut.pyronaut:micronaut-pyronaut-logback'
 ]
 development-runtime = [

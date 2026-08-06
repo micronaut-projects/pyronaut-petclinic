@@ -15,10 +15,10 @@ maximum-size = 100
 [datasources.default]
 db-type = 'oracle'
 driver-class-name = 'oracle.jdbc.OracleDriver'
-schema-generate = 'CREATE'
+schema-generate = 'NONE'
 dialect = 'ORACLE'
 
-[petclinic.sample-data]
+[flyway.datasources.default]
 enabled = true
 
 [logger.levels]
