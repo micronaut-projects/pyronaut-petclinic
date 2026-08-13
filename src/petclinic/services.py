@@ -91,9 +91,8 @@ class ClinicService:
     def owner_detail_model(self, owner: Owner) -> list[dict]:
         """Build the view model used by the owner details template.
 
-        Templates are deliberately simple string templates, so the service
-        shapes nested owner, pet, and visit data into dictionaries that are
-        easy for the renderer to consume.
+        The service shapes nested owner, pet, and visit data into dictionaries
+        that are easy for the Jinjava templates to consume.
         """
 
         if owner.id is None:

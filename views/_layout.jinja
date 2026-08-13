@@ -26,17 +26,17 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link $home_active" href="/">
+                        <a class="nav-link" href="/">
                         <i class="fas fa-home"></i> Home
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link $owners_active" href="/owners/find">
+                        <a class="nav-link" href="/owners/find">
                         <i class="fas fa-search"></i> Find Owners
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link $vets_active" href="/vets">
+                        <a class="nav-link" href="/vets">
                         <i class="fas fa-user-md"></i> Veterinarians
                     </a>
                 </li>
@@ -57,7 +57,7 @@
 </nav>
 
 <main class="flex-grow-1 py-4">
-$body
+{% block content %}{% endblock %}
 </main>
 
 <footer class="footer">

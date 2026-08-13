@@ -12,7 +12,7 @@
             <div class="row g-3">
                 <div class="col-md-12">
                     <div class="text-muted small">We encountered an unexpected error</div>
-                    <div><code>$message</code></div>
+                    <div><code>{{ message|e }}</code></div>
                 </div>
             </div>
 
@@ -23,3 +23,6 @@
         </div>
     </div>
 </main>
+{% endblock %}
+{% extends "_layout.jinja" %}
+{% block content %}

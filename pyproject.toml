@@ -13,12 +13,12 @@ package-dir.'' = 'src'
 packages.find.where = ['src']
 
 [tool.pyronaut.toolchain]
-type = 'native'
+type = 'jvm'
 
 [tool.pyronaut]
 repositories = ['mavenCentral']
 core.version = '5.1.0-SNAPSHOT'
-platform.version = '5.0.0'
+platform.version = '5.1.0'
 
 [tool.pyronaut.control-panel]
 enabled = true
@@ -41,9 +41,10 @@ runtime = [
   'io.micronaut.cache:micronaut-cache-core',
   'io.micronaut.data:micronaut-data-jdbc',
   'io.micronaut.serde:micronaut-serde-jackson',
+  'com.fasterxml.jackson.core:jackson-databind',
   'io.micronaut.sql:micronaut-jdbc-ucp',
   'io.micronaut.validation:micronaut-validation',
-  'io.micronaut.views:micronaut-views-core',
+  'io.micronaut.views:micronaut-views-jinjava',
   'com.oracle.database.jdbc:ojdbc11',
   'io.micronaut.pyronaut:micronaut-pyronaut-logback'
 ]
