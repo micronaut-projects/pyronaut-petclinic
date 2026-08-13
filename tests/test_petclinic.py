@@ -118,6 +118,7 @@ def test_owner_pet_visit_form_flow(client):
 
     types_page = client.get(f"{owner_url}/pets/new")
     assert "dog" in types_page.text
+    assert len(re.findall(r'<option value="\d+">', types_page.text)) == 6
     dog_type_id = re.search(r'<option value="(\d+)">dog</option>', types_page.text).group(1)
 
     invalid_pet = client.post(

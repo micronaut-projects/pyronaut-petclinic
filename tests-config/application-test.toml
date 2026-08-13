@@ -7,8 +7,5 @@ port = -1
 [datasources.default]
 db-type = 'oracle'
 driver-class-name = 'oracle.jdbc.OracleDriver'
-schema-generate = 'CREATE_DROP'
+schema-generate = 'NONE'
 dialect = 'ORACLE'
-
-[petclinic.sample-data]
-enabled = true

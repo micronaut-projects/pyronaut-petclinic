@@ -1,0 +1,15 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "db/migration/.*"
+      },
+      {
+        "pattern": "META-INF/services/org\\.flywaydb\\.core\\.extensibility\\.Plugin"
+      },
+      {
+        "pattern": "org/flywaydb/core/internal/version\\.txt"
+      }
+    ]
+  }
+}
