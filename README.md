@@ -2,8 +2,9 @@
 
 This PetClinic implementation is a Python JSON API plus a React 18 single-page application.
 Micronaut Views React server-renders the initial document, and the browser hydrates the same route
-tree. In Pyronaut, React rendering leases the Python-owned polyglot contexts, so GraalPy and
-GraalJS run in one VM without a separate React engine or context pool.
+tree. The JVM runtime includes GraalJS and Micronaut Views React uses its standalone, pooled
+JavaScript contexts; Python controllers and React SSR remain in the same JVM while each runtime
+keeps its own language context.
 
 The application keeps the familiar browser URLs (`/owners/find`, `/owners/{id}`, `/vets`, and the
 pet/visit form URLs). Data operations use `/api/**`; `/vets/json` remains as a compatibility alias.
@@ -25,8 +26,8 @@ under `.micronaut/`, and `node_modules/` are intentionally ignored by Git.
 
 ## Requirements
 
-- A Pyronaut SDK containing `micronaut-pyronaut-views-react`
-- GraalPy 25.x and GraalJS Community (selected in `pyproject.toml`)
+- A JVM Pyronaut SDK
+- GraalPy 25.x and GraalJS (selected in `pyproject.toml`)
 - Node.js and npm
 - Docker or another Test Resources-compatible container runtime for Oracle
 
