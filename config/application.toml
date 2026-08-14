@@ -7,9 +7,6 @@ name = 'pyronaut-petclinic'
 type = 'CACHED'
 virtual = false
 
-[micronaut.views.jinja]
-default-extension = '.jinja'
-
 [micronaut.views]
 folder = '.'
 
@@ -34,3 +31,4 @@ dialect = 'ORACLE'
 
 [flyway.datasources.default]
 enabled = true
+locations = ['filesystem:config/db/migration']

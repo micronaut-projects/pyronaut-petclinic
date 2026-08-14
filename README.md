@@ -8,6 +8,21 @@ GraalJS run in one VM without a separate React engine or context pool.
 The application keeps the familiar browser URLs (`/owners/find`, `/owners/{id}`, `/vets`, and the
 pet/visit form URLs). Data operations use `/api/**`; `/vets/json` remains as a compatibility alias.
 
+## Project Layout
+
+```text
+config/           Micronaut application configuration
+frontend/         Shared React route tree plus client and server entry points
+src/              Python controllers, entities, repositories, forms, and services
+static/           CSS, images, and the generated browser hydration bundle
+tests/            Pytest integration tests
+tests-config/     Test-specific Micronaut configuration
+views/            Generated React server-rendering bundle
+```
+
+Generated JavaScript bundles, Pyronaut files under `__pyronaut__/`, local Test Resources state
+under `.micronaut/`, and `node_modules/` are intentionally ignored by Git.
+
 ## Requirements
 
 - A Pyronaut SDK containing `micronaut-pyronaut-views-react`
