@@ -41,7 +41,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up GraalPy virtual environment
-        uses: ./pyronaut/.github/actions/setup-graalpy-pyenv
+        uses: micronaut-projects/pyronaut/.github/actions/setup-graalpy-pyenv@0.0.x
         with:
           graalpy-version: graalpy3.12-25.1.3
           pytest-version: '9.1.1'
