@@ -21,12 +21,17 @@ validator: Annotated[Validator, Inject]
 def validation_errors(form) -> dict[str, str]:
     errors = {}
     for violation in validator.validate(form):
-        property_path = violation.getPropertyPath()
-        leaf = property_path.getLeafNode()
-        field = str(leaf.getName()) if leaf is not None else ""
+        # GraalPy exposes Bean Validation's property path as a foreign object;
+        # use its Java string form instead of relying on an unexported API.
+        path = str(violation.getPropertyPath())
+        field = path.rsplit(".", 1)[-1] if path else ""
         if field:
             errors[field] = str(violation.getMessage())
     return errors
+
+
+def integer_value(value):
+    return int(str(value)) if value is not None else None
 
 
 def invalid(errors: dict[str, str]):
@@ -110,8 +115,9 @@ def api_create_pet(ownerId: int, form: Annotated[PetForm, Body]):
     if owner is None:
         return HttpResponse.notFound()
     errors = validation_errors(form)
-    pet_type = clinic_service.find_pet_type_by_id(form.typeId) if form.typeId is not None else None
-    if form.typeId is not None and pet_type is None:
+    type_id = integer_value(form.typeId)
+    pet_type = clinic_service.find_pet_type_by_id(type_id) if type_id is not None else None
+    if type_id is not None and pet_type is None:
         errors["typeId"] = "Invalid pet type"
     if errors:
         return invalid(errors)
@@ -134,8 +140,9 @@ def api_update_pet(ownerId: int, petId: int, form: Annotated[PetForm, Body]):
     if owner is None or pet is None:
         return HttpResponse.notFound()
     errors = validation_errors(form)
-    pet_type = clinic_service.find_pet_type_by_id(form.typeId) if form.typeId is not None else None
-    if form.typeId is not None and pet_type is None:
+    type_id = integer_value(form.typeId)
+    pet_type = clinic_service.find_pet_type_by_id(type_id) if type_id is not None else None
+    if type_id is not None and pet_type is None:
         errors["typeId"] = "Invalid pet type"
     if errors:
         return invalid(errors)

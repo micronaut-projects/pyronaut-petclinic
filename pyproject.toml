@@ -41,7 +41,7 @@ runtime = [
   'io.micronaut.data:micronaut-data-jdbc',
   'io.micronaut.flyway:micronaut-flyway',
   'io.micronaut.serde:micronaut-serde-jackson',
-  'io.micronaut.sql:micronaut-jdbc-ucp',
+  'io.micronaut.sql:micronaut-jdbc-hikari',
   'io.micronaut.validation:micronaut-validation',
   'io.micronaut.pyronaut:micronaut-pyronaut-views-react',
   'io.micronaut.views:micronaut-views-react:6.3.0-SNAPSHOT',
