@@ -201,17 +201,16 @@ def find_owners(notFound: Annotated[bool, QueryValue(defaultValue="false")] = Fa
 
 
 @Get("/owners")
-@View("App")
 def search_owners(lastName: Annotated[str, QueryValue(defaultValue="")] = ""):
     owners = clinic_service.find_all_owners() if not lastName else clinic_service.find_owner_by_last_name(lastName)
     if not owners:
         return HttpResponse.redirect(URI.create("/owners/find?notFound=true"))
     if len(owners) == 1:
         return HttpResponse.redirect(URI.create(f"/owners/{owners[0].id}"))
-    return react_model("ownerList", {
+    return ModelAndView("App", react_model("ownerList", {
         "lastName": lastName,
         "owners": [clinic_service.owner_summary_model(owner) for owner in owners],
-    })
+    }))
 
 
 @Get("/owners/list")

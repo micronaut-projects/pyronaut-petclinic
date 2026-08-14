@@ -95,7 +95,7 @@ function OwnerList({initial}) {
   return <Page title="Owners" actions={<Link className="btn btn-success" to="/owners/new">Add Owner</Link>}>
     {!state.owners.length ? <p>No owners found.</p> :
       <div className="row g-4">{state.owners.map(owner => <div className="col-md-6" key={owner.id}>
-        <div className="card card-body"><h2><Link to={`/owners/${owner.id}`}>{owner.firstName} {owner.lastName}</Link></h2>
+        <div className="card card-body"><h2><Link to={`/owners/${owner.id}`}>{`${owner.firstName} ${owner.lastName}`}</Link></h2>
           <p>{owner.address}<br/>{owner.city}<br/>{owner.telephone}</p></div>
       </div>)}</div>}
   </Page>;
@@ -225,7 +225,7 @@ function Vets({initial}) {
   if (error) return <ErrorMessage error={error}/>;
   return <Page title="Veterinarians">{!vets ? <p>Loading…</p> :
     <div className="row g-4">{vets.map(vet => <div className="col-md-6" key={vet.id}>
-      <div className="card card-body"><h2>{vet.firstName} {vet.lastName}</h2>
+      <div className="card card-body"><h2>{`${vet.firstName} ${vet.lastName}`}</h2>
         <p>{vet.specialitiesAsString}</p></div></div>)}</div>}</Page>;
 }
 
