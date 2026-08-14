@@ -25,11 +25,15 @@ maximum-size = 100
 [datasources.default]
 db-type = 'oracle'
 driver-class-name = 'oracle.jdbc.OracleDriver'
+create-connection-in-borrow-thread = true
 schema-generate = 'NONE'
 dialect = 'ORACLE'
 
 [flyway.datasources.default]
 enabled = true
+
+[ucp-manager]
+enabled = false
 
 [logger.levels]
 petclinic = 'DEBUG'
