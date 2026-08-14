@@ -1,0 +1,24 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+<div class="page-header"><div class="container"><h1><i class="fas fa-users me-3"></i>Pet Owners</h1><p>{{ owners|length }} owners found</p></div></div>
+<main class="container flex-grow-1 py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="/owners/find" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Search</a>
+    <a href="/owners/new" class="btn btn-success"><i class="fas fa-plus me-2"></i>Add Owner</a>
+  </div>
+  {% if owners %}
+  <div class="row g-4">
+    {% for owner in owners %}
+    <div class="col-md-6 col-lg-4"><div class="owner-card animate-fade-in-up">
+      <div class="d-flex align-items-start mb-3"><div class="owner-avatar me-3"><span>{{ (owner.firstName|default('?', true))[0]|e }}{{ (owner.lastName|default('?', true))[0]|e }}</span></div><div class="flex-grow-1"><h5 class="mb-1"><a href="/owners/{{ owner.id }}" class="text-decoration-none text-dark">{{ owner.firstName|e }} {{ owner.lastName|e }}</a></h5><p class="text-muted mb-0 small"><i class="fas fa-map-marker-alt me-1"></i>{{ owner.city|e }}</p></div></div>
+      <div class="mb-3"><p class="mb-1 small text-muted"><i class="fas fa-home me-2"></i>{{ owner.address|e }}</p><p class="mb-0 small text-muted"><i class="fas fa-phone me-2"></i>{{ owner.telephone|e }}</p></div>
+      <div class="mb-3"><div class="d-flex flex-wrap">{% for pet in owner.pets|default([], true) %}<span class="pet-badge"><i class="fas fa-paw"></i>{{ pet.name|e }}</span>{% else %}<span class="text-muted small"><i class="fas fa-info-circle me-1"></i>No pets registered</span>{% endfor %}</div></div>
+      <a href="/owners/{{ owner.id }}" class="btn btn-primary btn-sm w-100"><i class="fas fa-eye me-2"></i>View Details</a>
+    </div></div>
+    {% endfor %}
+  </div>
+  {% else %}
+  {% include "fragments/owners-empty.jinja" %}
+  {% endif %}
+</main>
+{% endblock %}

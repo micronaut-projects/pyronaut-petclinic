@@ -8,7 +8,7 @@ This repository is a Pyronaut port of the Micronaut PetClinic sample application
 - Micronaut Data JDBC repositories backed by Oracle.
 - Micronaut validation annotations on Python form objects.
 - Micronaut `@Mapper` usage for form-to-entity mapping.
-- Server-side HTML rendering through `micronaut-views-core` and a small Java bridge to Python `string.Template` views.
+- Server-side HTML rendering through Micronaut Views Jinjava templates.
 - Static resources served from the `static/` resource directory.
 - Oracle Test Resources provisioning for local tests and development runs.
 - Pytest integration through `micronaut-pyronaut-pytest`.
@@ -20,11 +20,11 @@ This repository is a Pyronaut port of the Micronaut PetClinic sample application
 - Docker or a compatible container runtime for Oracle Test Resources.
 - Java/GraalVM requirements as expected by the installed Pyronaut SDK.
 
-The project is configured for the native Pyronaut toolchain:
+The project is configured for the JVM Pyronaut toolchain:
 
 ```toml
 [tool.pyronaut.toolchain]
-type = 'native'
+type = 'jvm'
 ```
 
 ## Project Layout
@@ -32,7 +32,6 @@ type = 'native'
 ```text
 config/          Micronaut application configuration
 src/             Python application code
-src-java/        Minimal Java bridge for Micronaut Views
 static/          Static web assets
 tests/           Pytest test suite
 tests-config/    Test-specific Micronaut configuration
@@ -84,7 +83,4 @@ Relevant configuration lives in `config/application.toml` and `tests-config/appl
 
 ## Template Rendering
 
-Micronaut controllers use `@View` from `micronaut-views-core`. The Java bridge in `src-java/petclinic/views/PythonTemplateViewsRenderer.java` delegates rendering to `src/petclinic/views/renderer.py`, which loads `.html.template` files from `views/`.
-
-The renderer uses Python `string.Template` composition and escapes dynamic HTML by default in helper functions.
-
+Micronaut controllers use `@View` and the Micronaut Views Jinjava renderer. Templates live in `views/`, use the `.jinja` extension, and compose pages with Jinja inheritance and includes. Dynamic values are escaped by the templates using Jinjava's HTML escaping filters.

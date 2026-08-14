@@ -3,6 +3,16 @@
 [micronaut.application]
 name = 'pyronaut-petclinic'
 
+[micronaut.executors.blocking]
+type = 'CACHED'
+virtual = false
+
+[micronaut.views.jinja]
+default-extension = '.jinja'
+
+[micronaut.views]
+folder = '.'
+
 [micronaut.router.static-resources.default]
 enabled = true
 mapping = '/resources/**'

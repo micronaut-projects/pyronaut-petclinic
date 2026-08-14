@@ -1,4 +1,0 @@
-<div class="visit-item">
-    <div class="visit-date">$date</div>
-    <div class="visit-description">$description</div>
-</div>

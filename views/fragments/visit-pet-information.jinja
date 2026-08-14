@@ -4,21 +4,21 @@
     </div>
     <div class="detail-body">
         <div class="text-center mb-4">
-            $pet_icon
-            <h5>$pet_name</h5>
+            {{ pet_icon }}
+            <h5>{{ pet_name }}</h5>
         </div>
         <div class="info-row">
             <div class="info-label">Type</div>
-            <div class="info-value">$pet_type</div>
+            <div class="info-value">{{ pet_type }}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Birth Date</div>
-            <div class="info-value">$birth_date</div>
+            <div class="info-value">{{ birth_date }}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Owner</div>
-            <div class="info-value">$owner_name</div>
+            <div class="info-value">{{ owner_name }}</div>
         </div>
     </div>
 </div>
-$previous_visits
+{{ previous_visits }}

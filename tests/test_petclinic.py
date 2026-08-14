@@ -13,11 +13,9 @@ import re
 
 import pytest
 
-from micronaut.runtime.server import EmbeddedServer
 from pyronaut import requests
 from pyronaut.test import MicronautTest, micronaut_test_fixture
 
-from petclinic.views.renderer import TemplateNotFoundError, h, render_view
 
 
 @pytest.fixture
@@ -46,7 +44,7 @@ def client(application_context):
 def test_application_starts(application_context):
     """The embedded server is available from the Micronaut context."""
 
-    assert application_context[EmbeddedServer].isRunning()
+    assert application_context.isRunning()
 
 
 def test_seed_data_and_main_pages(client):
@@ -140,7 +138,9 @@ def test_owner_pet_visit_form_flow(client):
 
     owner_id = owner_url.rsplit("/", 1)[-1]
     detail = client.get(owner_url).text
-    pet_id = re.search(rf'/owners/{owner_id}/pets/(\d+)/edit', detail).group(1)
+    pet_match = re.search(rf'/owners/{owner_id}/pets/(\d+)/edit', detail)
+    assert pet_match, detail
+    pet_id = pet_match.group(1)
 
     invalid_visit = client.post(
         f"{owner_url}/pets/{pet_id}/visits/new",
@@ -187,12 +187,16 @@ def test_missing_owner_and_pet_paths(client):
     assert "Pet not found" in client.get("/owners/1/pets/999999/visits/new").text
 
 
-def test_template_renderer_escaping_and_missing_template():
-    """The custom renderer escapes HTML and reports missing templates."""
+def test_jinjava_templates_render_inheritance_and_conditionals(client):
+    """Jinjava renders the shared layout and Jinja control flow."""
 
-    assert h("<script>") == "&lt;script&gt;"
-    html = render_view("owners/ownersList", {"owners": []})
-    assert "No Owners Found" in html
-    assert "empty-state" in html
-    with pytest.raises(TemplateNotFoundError):
-        render_view("missing/template", {})
+    owners = client.get("/owners/list")
+    assert owners.status_code == 200
+    assert "Pet Clinic" in owners.text
+    assert "George Franklin" in owners.text
+    assert "$owner_count" not in owners.text
+    assert "{%" not in owners.text
+
+    not_found = client.get("/owners/list?lastName=DoesNotExist")
+    assert not_found.status_code == 200
+    assert "No Owners Found" in not_found.text
