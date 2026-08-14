@@ -5,6 +5,7 @@ from typing import Annotated
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from java.net import URI
+from java.time import LocalDate
 from micronaut.http import HttpResponse, HttpStatus, MediaType
 from micronaut.http.annotation import Body, Get, Post, Produces, Put, QueryValue
 from micronaut.views import ModelAndView, View
@@ -23,7 +24,7 @@ def validation_errors(form) -> dict[str, str]:
     for violation in validator.validate(form):
         # GraalPy exposes Bean Validation's property path as a foreign object;
         # use its Java string form instead of relying on an unexported API.
-        path = str(violation.getPropertyPath())
+        path = str(violation.getPropertyPath().toString())
         field = path.rsplit(".", 1)[-1] if path else ""
         if field:
             errors[field] = str(violation.getMessage())
@@ -32,6 +33,13 @@ def validation_errors(form) -> dict[str, str]:
 
 def integer_value(value):
     return int(str(value)) if value is not None else None
+
+
+def populate_dates(form):
+    if getattr(form, "birthDate", None):
+        form.birthDateValue = LocalDate.parse(str(form.birthDate))
+    if getattr(form, "date", None):
+        form.dateValue = LocalDate.parse(str(form.date))
 
 
 def invalid(errors: dict[str, str]):
@@ -73,6 +81,7 @@ def api_create_owner(form: Annotated[OwnerForm, Body]):
     errors = validation_errors(form)
     if errors:
         return invalid(errors)
+    populate_dates(form)
     owner = clinic_service.save_owner(form_mapper.to_owner(form))
     model = clinic_service.owner_model(owner)
     return created(model, f"/api/owners/{owner.id}")
@@ -96,6 +105,7 @@ def api_update_owner(ownerId: int, form: Annotated[OwnerForm, Body]):
     errors = validation_errors(form)
     if errors:
         return invalid(errors)
+    populate_dates(form)
     return clinic_service.owner_model(
         clinic_service.save_owner(form_mapper.update_owner(owner, form)),
         include_pets=True,
@@ -121,6 +131,7 @@ def api_create_pet(ownerId: int, form: Annotated[PetForm, Body]):
         errors["typeId"] = "Invalid pet type"
     if errors:
         return invalid(errors)
+    populate_dates(form)
     pet = clinic_service.save_pet(form_mapper.to_pet(form, owner, pet_type))
     return created(clinic_service.pet_model(pet), f"/api/owners/{ownerId}/pets/{pet.id}")
 
@@ -146,6 +157,7 @@ def api_update_pet(ownerId: int, petId: int, form: Annotated[PetForm, Body]):
         errors["typeId"] = "Invalid pet type"
     if errors:
         return invalid(errors)
+    populate_dates(form)
     updated = clinic_service.save_pet(form_mapper.update_pet(pet, form, owner, pet_type))
     return clinic_service.pet_model(updated, include_visits=True)
 
@@ -159,6 +171,7 @@ def api_create_visit(ownerId: int, petId: int, form: Annotated[VisitForm, Body])
     errors = validation_errors(form)
     if errors:
         return invalid(errors)
+    populate_dates(form)
     visit = clinic_service.save_visit(form_mapper.to_visit(form, pet))
     return created(clinic_service.visit_model(visit), f"/api/owners/{ownerId}/pets/{petId}/visits/{visit.id}")
 
