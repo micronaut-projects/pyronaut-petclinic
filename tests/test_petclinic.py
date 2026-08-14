@@ -2,7 +2,6 @@
 
 import pytest
 
-from micronaut.runtime.server import EmbeddedServer
 from pyronaut import requests
 from pyronaut.test import MicronautTest, micronaut_test_fixture
 
@@ -23,7 +22,7 @@ def client(application_context):
 
 
 def test_application_starts_and_ssr_routes_hydrate(client, application_context):
-    assert application_context[EmbeddedServer].isRunning()
+    assert application_context["io.micronaut.runtime.server.EmbeddedServer"].isRunning()
     home = client.get("/")
     assert home.status_code == 200
     assert "Welcome to PetClinic" in home.text

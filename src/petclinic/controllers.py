@@ -21,7 +21,9 @@ validator: Annotated[Validator, Inject]
 def validation_errors(form) -> dict[str, str]:
     errors = {}
     for violation in validator.validate(form):
-        field = str(violation.getPropertyPath()).rsplit(".", 1)[-1]
+        property_path = violation.getPropertyPath()
+        leaf = property_path.getLeafNode()
+        field = str(leaf.getName()) if leaf is not None else ""
         if field:
             errors[field] = str(violation.getMessage())
     return errors
