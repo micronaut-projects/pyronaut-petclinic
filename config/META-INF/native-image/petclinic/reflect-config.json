@@ -29,13 +29,5 @@
     "name": "org.flywaydb.database.oracle.OracleConfigurationExtension",
     "allDeclaredConstructors": true,
     "allPublicMethods": true
-  },
-  {
-    "name": "org.flywaydb.core.api.migration.baseline.BaselineMigrationConfigurationExtension",
-    "allPublicMethods": true
-  },
-  {
-    "name": "org.flywaydb.core.internal.logging.slf4j.Slf4jLogCreator",
-    "allDeclaredConstructors": true
   }
 ]
