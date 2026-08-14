@@ -43,7 +43,6 @@ runtime = [
   'io.micronaut.serde:micronaut-serde-jackson',
   'io.micronaut.sql:micronaut-jdbc-hikari',
   'io.micronaut.validation:micronaut-validation',
-  'io.micronaut.pyronaut:micronaut-pyronaut-views-react',
   'io.micronaut.views:micronaut-views-react:6.3.0-SNAPSHOT',
   'org.graalvm.polyglot:polyglot:25.1.3',
   'org.graalvm.polyglot:js:25.1.3',

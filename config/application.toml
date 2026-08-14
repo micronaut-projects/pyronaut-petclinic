@@ -16,7 +16,7 @@ mapping = '/static/**'
 paths = ['file:static']
 
 [micronaut.views.react]
-server-bundle-path = 'classpath:views/ssr-components.mjs'
+server-bundle-path = 'classpath:ssr-components.mjs'
 client-bundle-url = '/static/client.js'
 
 [micronaut.caches.vets]
