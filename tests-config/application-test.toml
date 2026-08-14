@@ -4,6 +4,9 @@ name = 'pyronaut-petclinic-test'
 [micronaut.server]
 port = -1
 
+[micronaut.http.client]
+read-timeout = '120s'
+
 [datasources.default]
 db-type = 'oracle'
 driver-class-name = 'oracle.jdbc.OracleDriver'
