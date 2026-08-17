@@ -24,6 +24,11 @@ __pyronaut__/
 *.iml
 .DS_Store
 
+# Generated React bundles and installed JavaScript dependencies
+node_modules/
+static/client.js*
+views/ssr-components.mjs*
+
 # Logs and temporary files
 *.log
 *.tmp
@@ -31,4 +36,3 @@ __pyronaut__/
 *.swo
 tmp/
 temp/
-

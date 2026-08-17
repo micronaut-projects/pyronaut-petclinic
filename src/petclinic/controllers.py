@@ -1,280 +1,299 @@
-"""HTTP controllers for the PetClinic sample.
+"""PetClinic JSON API and React server-rendered browser routes."""
 
-This module demonstrates Pyronaut's script-style routing model. Functions
-decorated with ``@Get`` and ``@Post`` become Micronaut routes, and module-level
-``Annotated[..., Inject]`` variables are injected by Micronaut.
-
-Important concepts shown here:
-
-* ``@View`` renders the returned model with Micronaut Views.
-* ``Annotated[T, Body]`` binds submitted form data into Python DTOs.
-* ``QueryValue`` binds query parameters with defaults.
-* ``HttpResponse.redirect`` and ``HttpResponse.notFound`` create explicit HTTP
-  responses when a route should not render its default view.
-* The controller depends on ``ClinicService`` and ``FormMapper`` instead of
-  reaching into repositories directly.
-"""
-
-from datetime import date
 from typing import Annotated
 
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from java.net import URI
 from java.time import LocalDate
-from micronaut.http import HttpResponse, MediaType
-from micronaut.http.annotation import Body, Get, Post, Produces, QueryValue
-from micronaut.views import View
+from micronaut.http import HttpResponse, HttpStatus, MediaType
+from micronaut.http.annotation import Body, Get, Post, Produces, Put, QueryValue
+from micronaut.views import ModelAndView, View
 
 from .forms import OwnerForm, PetForm, VisitForm
 from .mapper import FormMapper
 from .services import ClinicService
 
 clinic_service: Annotated[ClinicService, Inject]
-"""Injected application service facade."""
-
 form_mapper: Annotated[FormMapper, Inject]
-"""Injected compile-time mapper bean."""
-
 validator: Annotated[Validator, Inject]
-"""Injected Jakarta Validation entry point."""
-
-
-def redirect_to(location: str):
-    """Build a redirect response using Java's ``URI`` type."""
-
-    return HttpResponse.redirect(URI.create(location))
 
 
 def validation_errors(form) -> dict[str, str]:
-    """Convert Jakarta ``ConstraintViolation`` objects into template data."""
-
     errors = {}
     for violation in validator.validate(form):
-        field = str(violation.getPropertyPath())
-        if "." in field:
-            field = field.rsplit(".", 1)[-1]
+        # GraalPy exposes Bean Validation's property path as a foreign object;
+        # use its Java string form instead of relying on an unexported API.
+        path = str(violation.getPropertyPath().toString())
+        field = path.rsplit(".", 1)[-1] if path else ""
         if field:
             errors[field] = str(violation.getMessage())
-    for field, label in (("birthDate", "Birth date"), ("date", "Visit date")):
-        value = getattr(form, field, None)
-        if value:
-            try:
-                date.fromisoformat(value)
-            except ValueError:
-                errors[field] = f"{label} must be a valid date"
     return errors
 
 
-def pet_type_for(form: PetForm, errors: dict[str, str]):
-    try:
-        return clinic_service.find_pet_type_by_id(int(form.typeId)) if form.typeId else None
-    except ValueError:
-        errors["typeId"] = "Invalid pet type"
+def integer_value(value):
+    return int(str(value)) if value is not None else None
+
+
+def populate_dates(form):
+    if getattr(form, "birthDate", None):
+        form.birthDateValue = LocalDate.parse(str(form.birthDate))
+    if getattr(form, "date", None):
+        form.dateValue = LocalDate.parse(str(form.date))
+
+
+def invalid(errors: dict[str, str]):
+    return HttpResponse.status(HttpStatus.UNPROCESSABLE_ENTITY).body({
+        "message": "Validation failed",
+        "errors": errors,
+    })
+
+
+def created(resource: dict, location: str):
+    return HttpResponse.created(resource, URI.create(location))
+
+
+def react_model(page: str, data: dict | None = None) -> dict:
+    return {"page": page, "data": data or {}}
+
+
+def not_found(message: str):
+    return HttpResponse.notFound(ModelAndView("App", react_model("notFound", {"message": message})))
+
+
+def pet_for_owner(owner_id: int, pet_id: int):
+    pet = clinic_service.find_pet_by_id(pet_id)
+    if pet is None or pet.owner is None or pet.owner.id != owner_id:
         return None
+    return pet
 
 
-def parse_form_date(value: str | None) -> LocalDate:
-    assert value is not None
-    return LocalDate.parse(value)
-
-
-@Get("/")
-@View("welcome")
-def welcome() -> dict:
-    """Render the welcome page.
-
-    Returning a dict gives the view renderer its model. This page has no dynamic
-    data, so the model is empty.
-    """
-
-    return {}
-
-
-@Get("/locale")
-def locale(backUrl: Annotated[str, QueryValue(defaultValue="/")] = "/"):
-    return redirect_to(backUrl or "/")
-
-
-@Get("/owners/find")
-@View("owners/findOwners")
-def init_find_form(notFound: Annotated[bool, QueryValue(defaultValue="false")] = False) -> dict:
-    return {"owner": OwnerForm(), "notFound": notFound}
-
-
-@Get("/owners")
-@View("owners/ownersList")
-def process_find_form(lastName: Annotated[str, QueryValue(defaultValue="")] = ""):
-    """Search owners and follow the PetClinic redirect behavior."""
-
+@Get("/api/owners")
+@Produces(MediaType.APPLICATION_JSON)
+def api_owners(lastName: Annotated[str, QueryValue(defaultValue="")] = "") -> list[dict]:
     owners = clinic_service.find_all_owners() if not lastName else clinic_service.find_owner_by_last_name(lastName)
-    if len(owners) == 0:
-        return redirect_to("/owners/find?notFound=true")
-    if len(owners) == 1:
-        return redirect_to(f"/owners/{owners[0].id}")
-    return {"owners": owners, "lastName": lastName}
+    return [clinic_service.owner_summary_model(owner) for owner in owners]
 
 
-@Get("/owners/list")
-@View("owners/ownersList")
-def show_owner_list(lastName: Annotated[str, QueryValue(defaultValue="")] = "") -> dict:
-    owners = clinic_service.find_all_owners() if not lastName else clinic_service.find_owner_by_last_name(lastName)
-    return {"owners": owners, "lastName": lastName}
-
-
-@Get("/owners/new")
-@View("owners/createOrUpdateOwnerForm")
-def init_owner_creation_form() -> dict:
-    return {"owner": OwnerForm(), "isNew": True, "validationErrors": {}}
-
-
-@Post(value="/owners/new", consumes=MediaType.APPLICATION_FORM_URLENCODED)
-@View("owners/createOrUpdateOwnerForm")
-def process_owner_creation_form(form: Annotated[OwnerForm, Body]):
-    """Bind, validate, map, persist, and redirect after owner creation."""
-
+@Post("/api/owners")
+@Produces(MediaType.APPLICATION_JSON)
+def api_create_owner(form: Annotated[OwnerForm, Body]):
     errors = validation_errors(form)
     if errors:
-        return {"owner": form, "isNew": True, "validationErrors": errors}
+        return invalid(errors)
+    populate_dates(form)
     owner = clinic_service.save_owner(form_mapper.to_owner(form))
-    return redirect_to(f"/owners/{owner.id}")
+    model = clinic_service.owner_model(owner)
+    return created(model, f"/api/owners/{owner.id}")
 
 
-@Get("/owners/{ownerId}/edit")
-@View("owners/createOrUpdateOwnerForm")
-def init_owner_update_form(ownerId: int) -> dict:
+@Get("/api/owners/{ownerId}")
+@Produces(MediaType.APPLICATION_JSON)
+def api_owner(ownerId: int):
     owner = clinic_service.find_owner_by_id(ownerId)
     if owner is None:
-        return {"error": "Owner not found", "isNew": False, "validationErrors": {}}
-    return {"owner": form_mapper.to_owner_form(owner), "ownerId": ownerId, "isNew": False, "validationErrors": {}}
-
-
-@Post(value="/owners/{ownerId}/edit", consumes=MediaType.APPLICATION_FORM_URLENCODED)
-@View("owners/createOrUpdateOwnerForm")
-def process_owner_update_form(ownerId: int, form: Annotated[OwnerForm, Body]):
-    existing = clinic_service.find_owner_by_id(ownerId)
-    if existing is None:
         return HttpResponse.notFound()
-    errors = validation_errors(form)
-    if errors:
-        return {"owner": form, "ownerId": ownerId, "isNew": False, "validationErrors": errors}
-    clinic_service.save_owner(form_mapper.update_owner(existing, form))
-    return redirect_to(f"/owners/{ownerId}")
+    return clinic_service.owner_model(owner, include_pets=True)
 
 
-@Get("/owners/{ownerId}")
-@View("owners/ownerDetails")
-def show_owner(ownerId: int) -> dict:
-    owner = clinic_service.find_owner_by_id(ownerId)
-    if owner is None:
-        return {"error": "Owner not found"}
-    return {"owner": owner, "pets": clinic_service.owner_detail_model(owner)}
-
-
-@Get("/owners/{ownerId}/pets/new")
-@View("pets/createOrUpdatePetForm")
-def init_pet_creation_form(ownerId: int) -> dict:
-    owner = clinic_service.find_owner_by_id(ownerId)
-    if owner is None or owner.id != ownerId:
-        return {"error": "Owner not found"}
-    return {"pet": PetForm(), "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True, "validationErrors": {}}
-
-
-@Post(value="/owners/{ownerId}/pets/new", consumes=MediaType.APPLICATION_FORM_URLENCODED)
-@View("pets/createOrUpdatePetForm")
-def process_pet_creation_form(ownerId: int, form: Annotated[PetForm, Body]):
-    """Create a pet from a form DTO.
-
-    ``PetForm`` carries a scalar ``typeId``. The controller resolves that ID to
-    the ``PetType`` entity before calling the generated mapper.
-    """
-
+@Put("/api/owners/{ownerId}")
+@Produces(MediaType.APPLICATION_JSON)
+def api_update_owner(ownerId: int, form: Annotated[OwnerForm, Body]):
     owner = clinic_service.find_owner_by_id(ownerId)
     if owner is None:
         return HttpResponse.notFound()
     errors = validation_errors(form)
-    pet_type = pet_type_for(form, errors)
-    if form.typeId and pet_type is None:
+    if errors:
+        return invalid(errors)
+    populate_dates(form)
+    return clinic_service.owner_model(
+        clinic_service.save_owner(form_mapper.update_owner(owner, form)),
+        include_pets=True,
+    )
+
+
+@Get("/api/pet-types")
+@Produces(MediaType.APPLICATION_JSON)
+def api_pet_types() -> list[dict]:
+    return clinic_service.pet_type_models()
+
+
+@Post("/api/owners/{ownerId}/pets")
+@Produces(MediaType.APPLICATION_JSON)
+def api_create_pet(ownerId: int, form: Annotated[PetForm, Body]):
+    owner = clinic_service.find_owner_by_id(ownerId)
+    if owner is None:
+        return HttpResponse.notFound()
+    errors = validation_errors(form)
+    type_id = integer_value(form.typeId)
+    pet_type = clinic_service.find_pet_type_by_id(type_id) if type_id is not None else None
+    if type_id is not None and pet_type is None:
         errors["typeId"] = "Invalid pet type"
     if errors:
-        return {"pet": form, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True, "validationErrors": errors}
-    form.birthDateValue = parse_form_date(form.birthDate)
-    pet = form_mapper.to_pet(form, owner, pet_type)
-    clinic_service.save_pet(pet)
-    return redirect_to(f"/owners/{ownerId}")
+        return invalid(errors)
+    populate_dates(form)
+    pet = clinic_service.save_pet(form_mapper.to_pet(form, owner, pet_type))
+    return created(clinic_service.pet_model(pet), f"/api/owners/{ownerId}/pets/{pet.id}")
 
 
-@Get("/owners/{ownerId}/pets/{petId}/edit")
-@View("pets/createOrUpdatePetForm")
-def init_pet_update_form(ownerId: int, petId: int) -> dict:
-    pet = clinic_service.find_pet_by_id(petId)
-    if pet is None:
-        return {"error": "Pet not found"}
-    owner = pet.owner or clinic_service.find_owner_by_id(ownerId)
-    return {"pet": form_mapper.to_pet_form(pet), "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False, "validationErrors": {}}
+@Get("/api/owners/{ownerId}/pets/{petId}")
+@Produces(MediaType.APPLICATION_JSON)
+def api_pet(ownerId: int, petId: int):
+    pet = pet_for_owner(ownerId, petId)
+    return HttpResponse.notFound() if pet is None else clinic_service.pet_model(pet, include_visits=True)
 
 
-@Post(value="/owners/{ownerId}/pets/{petId}/edit", consumes=MediaType.APPLICATION_FORM_URLENCODED)
-@View("pets/createOrUpdatePetForm")
-def process_pet_update_form(ownerId: int, petId: int, form: Annotated[PetForm, Body]):
+@Put("/api/owners/{ownerId}/pets/{petId}")
+@Produces(MediaType.APPLICATION_JSON)
+def api_update_pet(ownerId: int, petId: int, form: Annotated[PetForm, Body]):
     owner = clinic_service.find_owner_by_id(ownerId)
-    pet = clinic_service.find_pet_by_id(petId)
+    pet = pet_for_owner(ownerId, petId)
     if owner is None or pet is None:
         return HttpResponse.notFound()
     errors = validation_errors(form)
-    pet_type = pet_type_for(form, errors)
-    if form.typeId and pet_type is None:
+    type_id = integer_value(form.typeId)
+    pet_type = clinic_service.find_pet_type_by_id(type_id) if type_id is not None else None
+    if type_id is not None and pet_type is None:
         errors["typeId"] = "Invalid pet type"
     if errors:
-        return {"pet": form, "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False, "validationErrors": errors}
-    form.birthDateValue = parse_form_date(form.birthDate)
-    updated = form_mapper.update_pet(pet, form, owner, pet_type)
-    clinic_service.save_pet(updated)
-    return redirect_to(f"/owners/{ownerId}")
+        return invalid(errors)
+    populate_dates(form)
+    updated = clinic_service.save_pet(form_mapper.update_pet(pet, form, owner, pet_type))
+    return clinic_service.pet_model(updated, include_visits=True)
 
 
-@Get("/owners/{ownerId}/pets/{petId}/visits/new")
-@View("pets/createOrUpdateVisitForm")
-def init_visit_creation_form(ownerId: int, petId: int) -> dict:
-    pet = clinic_service.find_pet_by_id(petId)
-    if pet is None:
-        return {"error": "Pet not found"}
-    return {"visit": VisitForm(), "pet": pet, "owner": pet.owner, "validationErrors": {}}
-
-
-@Post(value="/owners/{ownerId}/pets/{petId}/visits/new", consumes=MediaType.APPLICATION_FORM_URLENCODED)
-@View("pets/createOrUpdateVisitForm")
-def process_visit_creation_form(ownerId: int, petId: int, form: Annotated[VisitForm, Body]):
-    pet = clinic_service.find_pet_by_id(petId)
+@Post("/api/owners/{ownerId}/pets/{petId}/visits")
+@Produces(MediaType.APPLICATION_JSON)
+def api_create_visit(ownerId: int, petId: int, form: Annotated[VisitForm, Body]):
+    pet = pet_for_owner(ownerId, petId)
     if pet is None:
         return HttpResponse.notFound()
     errors = validation_errors(form)
     if errors:
-        return {"visit": form, "pet": pet, "owner": pet.owner, "validationErrors": errors}
-    form.dateValue = parse_form_date(form.date)
-    visit = form_mapper.to_visit(form, pet)
-    clinic_service.save_visit(visit)
-    return redirect_to(f"/owners/{ownerId}")
+        return invalid(errors)
+    populate_dates(form)
+    visit = clinic_service.save_visit(form_mapper.to_visit(form, pet))
+    return created(clinic_service.visit_model(visit), f"/api/owners/{ownerId}/pets/{petId}/visits/{visit.id}")
 
 
-@Get("/vets")
-@View("vets/vetList")
-def show_vet_list() -> dict:
-    return {"vets": clinic_service.vet_models()}
-
-
-@Get("/vets/html")
-@View("vets/vetList")
-def show_vet_list_html() -> dict:
-    return show_vet_list()
+@Get("/api/vets")
+@Produces(MediaType.APPLICATION_JSON)
+def api_vets() -> list[dict]:
+    return clinic_service.vet_models()
 
 
 @Get("/vets/json")
 @Produces(MediaType.APPLICATION_JSON)
-def show_vet_list_json() -> list:
-    """Return the same vet model as JSON.
-
-    ``@Produces`` selects the JSON media type instead of view rendering.
-    """
-
+def vets_json_alias() -> list[dict]:
     return clinic_service.vet_models()
+
+
+@Get("/")
+@View("App")
+def welcome() -> dict:
+    return react_model("welcome")
+
+
+@Get("/owners/find")
+@View("App")
+def find_owners(notFound: Annotated[bool, QueryValue(defaultValue="false")] = False) -> dict:
+    return react_model("ownerFind", {"notFound": notFound})
+
+
+@Get("/owners")
+def search_owners(lastName: Annotated[str, QueryValue(defaultValue="")] = ""):
+    owners = clinic_service.find_all_owners() if not lastName else clinic_service.find_owner_by_last_name(lastName)
+    if not owners:
+        return HttpResponse.redirect(URI.create("/owners/find?notFound=true"))
+    if len(owners) == 1:
+        return HttpResponse.redirect(URI.create(f"/owners/{owners[0].id}"))
+    return ModelAndView("App", react_model("ownerList", {
+        "lastName": lastName,
+        "owners": [clinic_service.owner_summary_model(owner) for owner in owners],
+    }))
+
+
+@Get("/owners/list")
+@View("App")
+def owner_list(lastName: Annotated[str, QueryValue(defaultValue="")] = "") -> dict:
+    owners = clinic_service.find_all_owners() if not lastName else clinic_service.find_owner_by_last_name(lastName)
+    return react_model("ownerList", {
+        "lastName": lastName,
+        "owners": [clinic_service.owner_summary_model(owner) for owner in owners],
+    })
+
+
+@Get("/owners/new")
+@View("App")
+def owner_create() -> dict:
+    return react_model("ownerForm", {"owner": {}, "isNew": True})
+
+
+@Get("/owners/{ownerId}")
+@View("App")
+def owner_detail(ownerId: int):
+    owner = clinic_service.find_owner_by_id(ownerId)
+    if owner is None:
+        return not_found("Owner not found")
+    return react_model("ownerDetail", {"owner": clinic_service.owner_model(owner, include_pets=True)})
+
+
+@Get("/owners/{ownerId}/edit")
+@View("App")
+def owner_edit(ownerId: int):
+    owner = clinic_service.find_owner_by_id(ownerId)
+    if owner is None:
+        return not_found("Owner not found")
+    return react_model("ownerForm", {"owner": clinic_service.owner_model(owner), "isNew": False})
+
+
+@Get("/owners/{ownerId}/pets/new")
+@View("App")
+def pet_create(ownerId: int):
+    owner = clinic_service.find_owner_by_id(ownerId)
+    if owner is None:
+        return not_found("Owner not found")
+    return react_model("petForm", {
+        "owner": clinic_service.owner_summary_model(owner),
+        "pet": {},
+        "types": clinic_service.pet_type_models(),
+        "isNew": True,
+    })
+
+
+@Get("/owners/{ownerId}/pets/{petId}/edit")
+@View("App")
+def pet_edit(ownerId: int, petId: int):
+    pet = pet_for_owner(ownerId, petId)
+    if pet is None:
+        return not_found("Pet not found")
+    return react_model("petForm", {
+        "owner": clinic_service.owner_summary_model(pet.owner),
+        "pet": clinic_service.pet_model(pet),
+        "types": clinic_service.pet_type_models(),
+        "isNew": False,
+    })
+
+
+@Get("/owners/{ownerId}/pets/{petId}/visits/new")
+@View("App")
+def visit_create(ownerId: int, petId: int):
+    pet = pet_for_owner(ownerId, petId)
+    if pet is None:
+        return not_found("Pet not found")
+    return react_model("visitForm", {
+        "owner": clinic_service.owner_summary_model(pet.owner),
+        "pet": clinic_service.pet_model(pet),
+    })
+
+
+@Get("/vets")
+@View("App")
+def vets() -> dict:
+    return react_model("vets", {"vets": clinic_service.vet_models()})
+
+
+@Get("/vets/html")
+@View("App")
+def vets_html() -> dict:
+    return vets()
