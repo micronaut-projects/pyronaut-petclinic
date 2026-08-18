@@ -31,6 +31,9 @@ dialect = 'ORACLE'
 [flyway.datasources.default]
 enabled = true
 
+[ucp-manager]
+enabled = false
+
 [logger.levels]
 petclinic = 'DEBUG'
 io.micronaut.data.query = 'ERROR'
