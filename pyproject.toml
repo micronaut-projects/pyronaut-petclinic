@@ -12,16 +12,28 @@ build-backend = 'setuptools.build_meta'
 package-dir.'' = 'src'
 packages.find.where = ['src']
 
-[tool.pyronaut.toolchain]
-type = 'native'
-
 [tool.pyronaut]
-repositories = ['mavenCentral']
-core.version = '5.1.0-SNAPSHOT'
-platform.version = '5.1.0'
+core.version = '5.2.0'
+platform.version = '5.1.4'
+
+[tool.pyronaut.toolchain]
+distribution = 'ee'
+java-version = 25
+
+[tool.pyronaut.run]
+banner-enabled = false
 
 [tool.pyronaut.control-panel]
 enabled = true
+
+[tool.pyronaut.validation]
+suppressions = ['micronaut.banner', 'micronaut.environments', 'micronaut.caches', 'micronaut.router']
+
+[tool.pyronaut.build.metadata]
+enabled = false
+
+[tool.pyronaut.ide-stubs]
+enabled = false
 
 [tool.pyronaut.sources]
 python = 'src'
@@ -46,9 +58,9 @@ runtime = [
   'io.micronaut.sql:micronaut-jdbc-ucp',
   'io.micronaut.validation:micronaut-validation',
   'io.micronaut.views:micronaut-views-jinjava',
+  'ch.qos.logback:logback-classic',
   'com.oracle.database.jdbc:ojdbc11',
-  'org.flywaydb:flyway-database-oracle',
-  'io.micronaut.pyronaut:micronaut-pyronaut-logback'
+  'org.flywaydb:flyway-database-oracle'
 ]
 development-runtime = [
   'io.micronaut.controlpanel:micronaut-control-panel-datasource'

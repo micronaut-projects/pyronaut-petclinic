@@ -3,6 +3,12 @@
 [micronaut.application]
 name = 'pyronaut-petclinic'
 
+[micronaut.banner]
+enabled = false
+
+[micronaut.server]
+context-path = '${PETCLINIC_BASE_PATH:}'
+
 [micronaut.executors.blocking]
 type = 'CACHED'
 virtual = false
@@ -25,11 +31,17 @@ maximum-size = 100
 [datasources.default]
 db-type = 'oracle'
 driver-class-name = 'oracle.jdbc.OracleDriver'
+url = 'jdbc:oracle:thin:@${DATABASE_URL:${ORACLE_DB_URL:}}'
 schema-generate = 'NONE'
 dialect = 'ORACLE'
 
+[datasources.default.data-source-properties]
+"oracle.jdbc.tokenAuthentication" = '${OCI_TOKEN:OCI_TOKEN}'
+"oracle.jdbc.tokenLocation" = '${OCI_GRAAL_DB_TOKEN:}'
+
 [flyway.datasources.default]
 enabled = true
+locations = ['filesystem:config/db/migration']
 
 [ucp-manager]
 enabled = false
