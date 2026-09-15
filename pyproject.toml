@@ -13,7 +13,7 @@ package-dir.'' = 'src'
 packages.find.where = ['src']
 
 [tool.pyronaut]
-core.version = '5.2.0'
+core.version = '5.2.1'
 platform.version = '5.1.4'
 
 [tool.pyronaut.toolchain]

@@ -18,12 +18,16 @@ from pyronaut.test import MicronautTest, micronaut_test_fixture
 
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def application_context(request):
-    """Start the Micronaut application for a pytest test.
+    """Start the Micronaut application once for the whole test module.
 
-    ``transactional=False`` keeps each HTTP request behavior close to a real
-    running server instead of wrapping the entire test in one transaction.
+    The fixture is module scoped because the Oracle UCP pool registers its
+    name with the JVM-wide pool manager; creating a new application context per
+    test function fails with ``UCP-45350: Universal Connection Pool already
+    exists``. ``transactional=False`` keeps each HTTP request behavior close to
+    a real running server instead of wrapping the entire test in one
+    transaction.
     """
 
     fixture = micronaut_test_fixture(
@@ -34,7 +38,7 @@ def application_context(request):
     fixture.stop()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def client(application_context):
     """Create a Pyronaut requests session bound to the test context."""
 

@@ -32,6 +32,7 @@ maximum-size = 100
 db-type = 'oracle'
 driver-class-name = 'oracle.jdbc.OracleDriver'
 url = 'jdbc:oracle:thin:@${DATABASE_URL:${ORACLE_DB_URL:}}'
+create-connection-in-borrow-thread = true
 schema-generate = 'NONE'
 dialect = 'ORACLE'
 
