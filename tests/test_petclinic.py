@@ -16,6 +16,8 @@ import pytest
 from pyronaut import requests
 from pyronaut.test import MicronautTest, micronaut_test_fixture
 
+
+
 @pytest.fixture
 def application_context(request):
     """Start the Micronaut application for a pytest test.

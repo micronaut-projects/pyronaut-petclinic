@@ -39,6 +39,7 @@ form_mapper: Annotated[FormMapper, Inject]
 validator: Annotated[Validator, Inject]
 """Injected Jakarta Validation entry point."""
 
+
 def redirect_to(location: str):
     """Build a redirect response using Java's ``URI`` type."""
 

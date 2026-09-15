@@ -77,11 +77,14 @@ The tests start the application with Oracle supplied by Micronaut Test Resources
 
 ## Database
 
-Oracle is the only configured database dialect for this sample. Password-based
-deployments provide `ORACLE_DB_URL`, `ORACLE_DB_USER`, and
-`ORACLE_DB_PASSWORD` through the `oracle` environment. On GraalOS, set
-`DATABASE_URL` and `OCI_GRAAL_DB_TOKEN`; `config/application.toml` configures
-Oracle token authentication without a username, password, or wallet.
+Oracle is the only configured database dialect for this sample. On GraalOS,
+`config/application.toml` reads `DATABASE_URL` (falling back to `ORACLE_DB_URL`)
+and `OCI_GRAAL_DB_TOKEN` for Oracle JDBC token authentication. `OCI_TOKEN`
+selects the authentication mode and defaults to the literal `OCI_TOKEN`.
+No separate Oracle configuration file or datasource configurer is needed.
+
+When `OCI_GRAAL_DB_TOKEN` is present, `src/main.py` sends application output
+to stderr for GraalOS log collection. Otherwise, logging uses stdout.
 
 When the application is exposed below a public path, set `PETCLINIC_BASE_PATH`
 (for example, `/ubh2rgra/`). It is read by Micronaut's configured server

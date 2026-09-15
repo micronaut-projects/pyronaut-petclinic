@@ -47,5 +47,5 @@ locations = ['filesystem:config/db/migration']
 enabled = false
 
 [logger.levels]
-petclinic = 'DEBUG'
+petclinic = 'INFO'
 io.micronaut.data.query = 'ERROR'

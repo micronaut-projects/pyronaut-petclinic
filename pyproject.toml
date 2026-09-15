@@ -29,12 +29,6 @@ enabled = true
 [tool.pyronaut.validation]
 suppressions = ['micronaut.banner', 'micronaut.environments', 'micronaut.caches', 'micronaut.router']
 
-[tool.pyronaut.build.metadata]
-enabled = false
-
-[tool.pyronaut.ide-stubs]
-enabled = false
-
 [tool.pyronaut.sources]
 python = 'src'
 python-test = 'tests'
