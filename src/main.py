@@ -5,7 +5,7 @@ import os
 
 from logback.config import dictConfig
 
-GRAALOS = bool(os.environ.get("OCI_GRAAL_DB_TOKEN", "").strip())
+GRAALOS = bool(os.environ.get("ORACLE_DB_TOKEN_DIR", "").strip())
 if GRAALOS:
     # GraalOS collects native application output from stderr.
     os.dup2(2, 1)

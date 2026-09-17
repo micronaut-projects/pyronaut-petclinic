@@ -30,7 +30,6 @@ maximum-size = 100
 
 [datasources.default]
 db-type = 'oracle'
-driver-class-name = 'oracle.jdbc.OracleDriver'
 url = 'jdbc:oracle:thin:@${DATABASE_URL:${ORACLE_DB_URL:}}'
 create-connection-in-borrow-thread = true
 schema-generate = 'NONE'
@@ -38,7 +37,7 @@ dialect = 'ORACLE'
 
 [datasources.default.data-source-properties]
 "oracle.jdbc.tokenAuthentication" = '${OCI_TOKEN:OCI_TOKEN}'
-"oracle.jdbc.tokenLocation" = '${OCI_GRAAL_DB_TOKEN:}'
+"oracle.jdbc.tokenLocation" = '${ORACLE_DB_TOKEN_DIR:}'
 
 [flyway.datasources.default]
 enabled = true
