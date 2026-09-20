@@ -53,7 +53,6 @@ runtime = [
   'io.micronaut.validation:micronaut-validation',
   'io.micronaut.views:micronaut-views-jinjava',
   'ch.qos.logback:logback-classic',
-  'com.oracle.database.jdbc:ojdbc11',
   'org.flywaydb:flyway-database-oracle'
 ]
 development-runtime = [

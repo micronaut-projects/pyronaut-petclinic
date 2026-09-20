@@ -30,7 +30,7 @@ maximum-size = 100
 
 [datasources.default]
 db-type = 'oracle'
-url = 'jdbc:oracle:thin:@${DATABASE_URL:${ORACLE_DB_URL:}}'
+url = 'jdbc:oracle:thin:@${ORACLE_DB_URL:}'
 create-connection-in-borrow-thread = true
 schema-generate = 'NONE'
 dialect = 'ORACLE'
