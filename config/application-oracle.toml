@@ -1,0 +1,7 @@
+[datasources.default]
+url = 'jdbc:oracle:thin:@${ORACLE_DB_URL}'
+username = '${ORACLE_DB_USER}'
+password = '${ORACLE_DB_PASSWORD:}'
+
+[datasources.default.data-source-properties]
+"oracle.jdbc.tokenAuthentication" = ''
