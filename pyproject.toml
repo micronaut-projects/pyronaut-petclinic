@@ -17,8 +17,6 @@ type = 'native'
 
 [tool.pyronaut]
 repositories = ['mavenCentral']
-core.version = '5.2.1'
-platform.version = '5.1.0'
 
 [tool.pyronaut.control-panel]
 enabled = true
@@ -42,7 +40,6 @@ runtime = [
   'io.micronaut.data:micronaut-data-jdbc',
   'io.micronaut.flyway:micronaut-flyway:8.1.1',
   'io.micronaut.serde:micronaut-serde-jackson',
-  "com.fasterxml.jackson.core:jackson-databind:2.22.1",
   'io.micronaut.sql:micronaut-jdbc-ucp',
   'io.micronaut.validation:micronaut-validation',
   'io.micronaut.views:micronaut-views-jinjava',
