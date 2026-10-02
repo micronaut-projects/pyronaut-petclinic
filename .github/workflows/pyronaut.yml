@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 90
     env:
       TESTCONTAINERS_RYUK_DISABLED: true
+      # The image Micronaut Test Resources starts for the Oracle datasource.
+      ORACLE_IMAGE: gvenzl/oracle-free:slim-faststart
 
     steps:
       - name: Check out PetClinic
@@ -26,6 +28,30 @@ jobs:
         uses: micronaut-projects/setup-pyronaut@v1
         with:
           pytest-version: '9.1.1'
+
+      # The tag is mutable, so the key rolls monthly to pick up new builds.
+      - name: Compute Oracle image cache key
+        id: oracle-image-key
+        run: |
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "ORACLE_IMAGE_ARCHIVE=$RUNNER_TEMP/oracle-free.tar" >> "$GITHUB_ENV"
+
+      - name: Cache Oracle image
+        id: oracle-image-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.ORACLE_IMAGE_ARCHIVE }}
+          key: docker-${{ runner.os }}-${{ env.ORACLE_IMAGE }}-${{ steps.oracle-image-key.outputs.month }}
+
+      - name: Load cached Oracle image
+        if: steps.oracle-image-cache.outputs.cache-hit == 'true'
+        run: docker load --input "$ORACLE_IMAGE_ARCHIVE"
+
+      - name: Pull Oracle image
+        if: steps.oracle-image-cache.outputs.cache-hit != 'true'
+        run: |
+          docker pull "$ORACLE_IMAGE"
+          docker save --output "$ORACLE_IMAGE_ARCHIVE" "$ORACLE_IMAGE"
 
       - name: Install project dependencies
         run: pyronaut install --progress off
