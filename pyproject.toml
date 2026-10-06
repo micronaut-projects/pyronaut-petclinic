@@ -13,7 +13,7 @@ package-dir.'' = 'src'
 packages.find.where = ['src']
 
 [tool.pyronaut.toolchain]
-type = 'native'
+type = 'jvm'
 
 [tool.pyronaut]
 repositories = ['mavenCentral']
