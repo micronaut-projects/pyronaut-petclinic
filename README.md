@@ -84,3 +84,7 @@ Relevant configuration lives in `config/application.toml` and `tests-config/appl
 ## Template Rendering
 
 Micronaut controllers use `@View` and the Micronaut Views Jinjava renderer. Templates live in `views/`, use the `.jinja` extension, and compose pages with Jinja inheritance and includes. Dynamic values are escaped by the templates using Jinjava's HTML escaping filters.
+
+## License
+
+Apache License 2.0.
