@@ -1,3 +1,7 @@
+# Local review and porting reports
+/docs/review-*.md
+/docs/porting-assessment.md
+
 # Python environments and packaging output
 .venv/
 venv/
@@ -32,3 +36,4 @@ __pyronaut__/
 tmp/
 temp/
 
+micronaut-petclinic/

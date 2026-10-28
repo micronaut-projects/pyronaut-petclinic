@@ -3,6 +3,22 @@
 [micronaut.application]
 name = 'pyronaut-petclinic'
 
+[endpoints.info]
+sensitive = false
+
+[endpoints.health]
+details-visible = 'AUTHENTICATED'
+
+[endpoints.health.jdbc]
+enabled = true
+
+[info.application]
+name = '${micronaut.application.name}'
+
+[micronaut.server.locale-resolution]
+default-locale = 'en'
+cookie-name = 'locale'
+
 [micronaut.executors.blocking]
 type = 'CACHED'
 virtual = false
@@ -22,19 +38,9 @@ paths = ['file:static']
 expire-after-write = '60s'
 maximum-size = 100
 
-[datasources.default]
-db-type = 'oracle'
-driver-class-name = 'oracle.jdbc.OracleDriver'
-create-connection-in-borrow-thread = true
-schema-generate = 'NONE'
-dialect = 'ORACLE'
-
 [flyway.datasources.default]
 enabled = true
 
-[ucp-manager]
-enabled = false
-
 [logger.levels]
 petclinic = 'DEBUG'
-io.micronaut.data.query = 'ERROR'
+'io.micronaut.data.query' = 'ERROR'

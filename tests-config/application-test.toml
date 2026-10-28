@@ -3,9 +3,3 @@ name = 'pyronaut-petclinic-test'
 
 [micronaut.server]
 port = -1
-
-[datasources.default]
-db-type = 'oracle'
-driver-class-name = 'oracle.jdbc.OracleDriver'
-schema-generate = 'NONE'
-dialect = 'ORACLE'

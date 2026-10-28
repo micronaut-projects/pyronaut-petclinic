@@ -1,0 +1,230 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-brain me-3"></i>{{ msg["knowledge.title"]|e }}</h1>
+            <p>{{ msg["knowledge.subtitle"]|e }}</p>
+        </div>
+    </div>
+
+    <main id="knowledge-page" class="container flex-grow-1 py-4"
+          data-results-title-label="{{ msg["knowledge.resultsTitle"]|e }}"
+          data-matches-template="{{ msg["knowledge.matches"]|replace("{0}", "__COUNT__")|e }}"
+          data-no-matches-label="{{ msg["knowledge.noMatches"]|e }}"
+          data-distance-template="{{ msg["knowledge.distance"]|replace("{0}", "__VALUE__")|e }}"
+          data-chunk-template="{{ msg["knowledge.chunk"]|replace("{0}", "__VALUE__")|e }}"
+          data-similarity-template="{{ msg["knowledge.similarity"]|replace("{0}", "__VALUE__")|e }}"
+          data-loading-label="{{ msg["knowledge.loading"]|e }}"
+          data-error-label="{{ msg["knowledge.searchError"]|e }}">
+        <div class="card mb-4 animate-fade-in-up">
+            <div class="card-body">
+                <form action="/knowledge" method="get" id="knowledge-search-form">
+                    <label for="query" class="form-label">
+                        <i class="fas fa-search me-2"></i>{{ msg["knowledge.queryLabel"]|e }}
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <input type="text" class="form-control" id="query" name="query"
+                               value="{{ query|default("", true)|e }}"
+                               placeholder="{{ msg["knowledge.queryPlaceholder"]|e }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search me-2"></i>{{ msg["knowledge.retrieveChunks"]|e }}
+                        </button>
+                    </div>
+                </form>
+                <div class="mt-3 text-muted small">
+                    <i class="fas fa-database me-1"></i>
+                    {{ msg["knowledge.searchMetadata"]|replace("{0}", dimensions)|e }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <h2 class="h5 mb-1">{{ msg["knowledge.quickSearch.title"]|e }}</h2>
+            <p class="text-muted small mb-0">{{ msg["knowledge.quickSearch.description"]|e }}</p>
+        </div>
+        <div class="row g-3 mb-4">
+                <div class="col-md-4"><a class="card h-100 text-decoration-none" data-knowledge-query="What vaccinations does my puppy need?" href="/knowledge?query=What+vaccinations+does+my+puppy+need%3F">
+                    <div class="card-body"><h5><i class="fas fa-syringe text-primary me-2"></i>{{ msg["knowledge.quickSearch.puppy.title"]|e }}</h5><p class="text-muted mb-0">{{ msg["knowledge.quickSearch.puppy.description"]|e }}</p></div>
+                </a></div>
+                <div class="col-md-4"><a class="card h-100 text-decoration-none" data-knowledge-query="When should a young dog receive its shots?" href="/knowledge?query=When+should+a+young+dog+receive+its+shots%3F">
+                    <div class="card-body"><h5><i class="fas fa-calendar-check text-info me-2"></i>{{ msg["knowledge.quickSearch.dog.title"]|e }}</h5><p class="text-muted mb-0">{{ msg["knowledge.quickSearch.dog.description"]|e }}</p></div>
+                </a></div>
+                <div class="col-md-4"><a class="card h-100 text-decoration-none" data-knowledge-query="How should I clean my bird's cage?" href="/knowledge?query=How+should+I+clean+my+bird%27s+cage%3F">
+                    <div class="card-body"><h5><i class="fas fa-dove text-warning me-2"></i>{{ msg["knowledge.quickSearch.bird.title"]|e }}</h5><p class="text-muted mb-0">{{ msg["knowledge.quickSearch.bird.description"]|e }}</p></div>
+                </a></div>
+                <div class="col-md-4"><a class="card h-100 text-decoration-none" data-knowledge-query="What temperature and humidity does a reptile habitat need?" href="/knowledge?query=What+temperature+and+humidity+does+a+reptile+habitat+need%3F">
+                    <div class="card-body"><h5><i class="fas fa-temperature-half text-danger me-2"></i>{{ msg["knowledge.quickSearch.reptile.title"]|e }}</h5><p class="text-muted mb-0">{{ msg["knowledge.quickSearch.reptile.description"]|e }}</p></div>
+                </a></div>
+                <div class="col-md-4"><a class="card h-100 text-decoration-none" data-knowledge-query="How can I improve my cat's nutrition" href="/knowledge?query=How+can+I+improve+my+cat%27s+nutrition">
+                    <div class="card-body"><h5><i class="fas fa-bowl-food text-success me-2"></i>{{ msg["knowledge.quickSearch.cat.title"]|e }}</h5><p class="text-muted mb-0">{{ msg["knowledge.quickSearch.cat.description"]|e }}</p></div>
+                </a></div>
+                <div class="col-md-4"><a class="card h-100 text-decoration-none" data-knowledge-query="What are pet poisoning warning signs" href="/knowledge?query=What+are+pet+poisoning+warning+signs">
+                    <div class="card-body"><h5><i class="fas fa-triangle-exclamation text-danger me-2"></i>{{ msg["knowledge.quickSearch.emergency.title"]|e }}</h5><p class="text-muted mb-0">{{ msg["knowledge.quickSearch.emergency.description"]|e }}</p></div>
+                </a></div>
+        </div>
+
+        <div id="knowledge-results" aria-live="polite">
+        {% if query %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h4 mb-0">{{ msg["knowledge.resultsTitle"]|e }}</h2>
+                <span class="badge bg-primary">{{ msg["knowledge.matches"]|replace("{0}", results|length)|e }}</span>
+            </div>
+
+            {% if not results %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-circle-info me-2"></i>{{ msg["knowledge.noMatches"]|e }}
+                </div>
+            {% else %}
+                {% for result in results %}
+                    <article class="card mb-3 animate-fade-in-up">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                                <div>
+                                    <span class="badge bg-secondary me-2">{{ result.topic|e }}</span>
+                                    <span class="badge bg-light text-dark">{{ result.species|e }}</span>
+                                </div>
+                                <span class="text-muted small">{{ msg["knowledge.distance"]|replace("{0}", result.distance)|e }}</span>
+                            </div>
+                            <h3 class="h5">{{ result.documentTitle|e }}</h3>
+                            <div class="text-muted small mb-2">{{ result.documentSource|e }}</div>
+                            <p class="mb-2">{{ result.content|e }}</p>
+                            <div class="text-muted small">
+                                {{ msg["knowledge.chunk"]|replace("{0}", result.chunkIndex + 1)|e }}
+                                {% if result.similarity != none %}
+                                    &middot; {{ msg["knowledge.similarity"]|replace("{0}", result.similarity)|e }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            {% endif %}
+        {% endif %}
+        </div>
+
+        <div class="card mt-5 border-primary">
+            <div class="card-body">
+                <h3 class="h5"><i class="fas fa-code me-2"></i>{{ msg["knowledge.api.title"]|e }}</h3>
+                <code>POST /knowledge/search</code>
+                <pre class="mt-2 mb-0"><code>{{ msg["knowledge.api.requestExample"]|e }}</code></pre>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        (() => {
+            const page = document.getElementById("knowledge-page");
+            const form = document.getElementById("knowledge-search-form");
+            const input = document.getElementById("query");
+            const results = document.getElementById("knowledge-results");
+            const submit = form.querySelector("button[type=submit]");
+            const labels = page.dataset;
+
+            const escapeHtml = (value) => String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+
+            const formatLabel = (template, value, token = "__VALUE__") =>
+                escapeHtml(template).replace(token, escapeHtml(value));
+
+            const renderResult = (result) => {
+                const similarity = result.similarity == null
+                    ? ""
+                    : " &middot; " + formatLabel(labels.similarityTemplate, result.similarity);
+                return "<article class=\"card mb-3 animate-fade-in-up\">"
+                    + "<div class=\"card-body\">"
+                    + "<div class=\"d-flex flex-wrap justify-content-between gap-2 mb-2\">"
+                    + "<div><span class=\"badge bg-secondary me-2\">"
+                    + escapeHtml(result.topic)
+                    + "</span><span class=\"badge bg-light text-dark\">"
+                    + escapeHtml(result.species)
+                    + "</span></div><span class=\"text-muted small\">"
+                    + formatLabel(labels.distanceTemplate, result.distance)
+                    + "</span></div>"
+                    + "<h3 class=\"h5\">"
+                    + escapeHtml(result.documentTitle)
+                    + "</h3><div class=\"text-muted small mb-2\">"
+                    + escapeHtml(result.documentSource)
+                    + "</div><p class=\"mb-2\">"
+                    + escapeHtml(result.content)
+                    + "</p><div class=\"text-muted small\">"
+                    + formatLabel(labels.chunkTemplate, (result.chunkIndex ?? 0) + 1)
+                    + similarity
+                    + "</div></div></article>";
+            };
+
+            const renderResults = (items) => {
+                const heading = "<div class=\"d-flex justify-content-between align-items-center mb-3\">"
+                    + "<h2 class=\"h4 mb-0\">"
+                    + escapeHtml(labels.resultsTitleLabel)
+                    + "</h2><span class=\"badge bg-primary\">"
+                    + formatLabel(labels.matchesTemplate, items.length, "__COUNT__")
+                    + "</span></div>";
+                const content = items.length > 0
+                    ? items.map(renderResult).join("")
+                    : "<div class=\"alert alert-warning\"><i class=\"fas fa-circle-info me-2\"></i>"
+                        + escapeHtml(labels.noMatchesLabel)
+                        + "</div>";
+                results.innerHTML = heading + content;
+            };
+
+            const search = async (query) => {
+                const trimmedQuery = query.trim();
+                input.value = query;
+                if (!trimmedQuery) {
+                    history.replaceState(null, "", window.location.pathname);
+                    results.innerHTML = "";
+                    return;
+                }
+
+                history.replaceState(null, "", window.location.pathname + "?query="
+                    + encodeURIComponent(query));
+                submit.disabled = true;
+                results.setAttribute("aria-busy", "true");
+                results.innerHTML = "<div class=\"text-center py-4\" role=\"status\">"
+                    + "<div class=\"spinner-border text-primary\" aria-hidden=\"true\"></div>"
+                    + "<span class=\"visually-hidden\">"
+                    + escapeHtml(labels.loadingLabel)
+                    + "</span></div>";
+
+                try {
+                    const response = await fetch("/knowledge/search", {
+                        method: "POST",
+                        headers: {
+                            Accept: "application/json",
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({query: query})
+                    });
+                    if (!response.ok) {
+                        throw new Error("Search request failed");
+                    }
+                    renderResults(await response.json());
+                } catch (exception) {
+                    results.innerHTML = "<div class=\"alert alert-danger\">"
+                        + escapeHtml(labels.errorLabel)
+                        + "</div>";
+                } finally {
+                    submit.disabled = false;
+                    results.removeAttribute("aria-busy");
+                }
+            };
+
+            form.addEventListener("submit", (event) => {
+                event.preventDefault();
+                search(input.value);
+            });
+
+            document.querySelectorAll("[data-knowledge-query]").forEach((link) => {
+                link.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    search(link.dataset.knowledgeQuery);
+                });
+            });
+        })();
+    </script>
+
+{% endblock %}

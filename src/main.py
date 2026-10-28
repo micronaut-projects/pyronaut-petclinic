@@ -33,4 +33,3 @@ LOGGING = {
 }
 
 dictConfig(LOGGING)
-

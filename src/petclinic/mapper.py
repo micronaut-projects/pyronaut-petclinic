@@ -14,21 +14,25 @@ from abc import ABC, abstractmethod
 
 from jakarta.inject import Singleton
 from micronaut.context.annotation import Mapper
-
-from .entities import Owner, Pet, PetType, Visit
-from .forms import OwnerForm, PetForm, VisitForm
+from petclinic.dtos.patients import OwnerForm, PetForm, VisitForm
+from petclinic.models.patients import Owner, Pet, PetType, Visit
 
 
 @Singleton
 class FormMapper(ABC):
     """Maps between browser-facing form DTOs and persistent entities."""
 
-    @Mapper
+    @Mapper.Mapping(from_="#{null}", to="id")
     @abstractmethod
     def to_owner(self, form: OwnerForm) -> Owner:
         ...
 
-    @Mapper
+    @Mapper.Mapping(from_="owner.id", to="id")
+    @Mapper.Mapping(from_="form.firstName", to="firstName")
+    @Mapper.Mapping(from_="form.lastName", to="lastName")
+    @Mapper.Mapping(from_="form.address", to="address")
+    @Mapper.Mapping(from_="form.city", to="city")
+    @Mapper.Mapping(from_="form.telephone", to="telephone")
     @abstractmethod
     def update_owner(self, owner: Owner, form: OwnerForm) -> Owner:
         ...
@@ -63,6 +67,8 @@ class FormMapper(ABC):
 
     @Mapper.Mapping(from_="#{null}", to="id")
     @Mapper.Mapping(from_="#{form.dateValue}", to="date")
+    @Mapper.Mapping(from_="#{form.durationValue}", to="duration")
+    @Mapper.Mapping(from_="#{form.periodValue}", to="period")
     @Mapper.Mapping(from_="#{pet}", to="pet")
     @abstractmethod
     def to_visit(self, form: VisitForm, pet: Pet) -> Visit:

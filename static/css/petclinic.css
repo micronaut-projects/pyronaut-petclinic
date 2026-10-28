@@ -710,6 +710,19 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 0.25rem;
 }
 
+.visit-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+    color: var(--gray-500);
+    font-size: 0.85rem;
+}
+
+/* ===== Oracle Transaction Priority Showcase ===== */
+.priority-booking.low { border-left: 4px solid var(--warning); }
+.priority-booking.high { border-left: 4px solid var(--success); }
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .hero h1 {
@@ -728,6 +741,7 @@ h1, h2, h3, h4, h5, h6 {
     .page-header h1 {
         font-size: 1.75rem;
     }
+
 }
 
 /* ===== Scrollbar ===== */

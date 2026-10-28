@@ -1,0 +1,237 @@
+{
+  "source": "micronaut-petclinic/src/test/java/io/micronaut/samples/petclinic/controller/ClinicControllerGeoTest.java",
+  "referenceCommit": "0ad5747",
+  "cases": [
+    {
+      "name": "shouldReturnClinicsWithinBoundingBoxAsJson",
+      "endpoint": "/clinics/within",
+      "payload": {
+        "coordinates": [
+          {
+            "latitude": 43.0,
+            "longitude": -89.55
+          },
+          {
+            "latitude": 43.2,
+            "longitude": -89.55
+          },
+          {
+            "latitude": 43.2,
+            "longitude": -89.2
+          },
+          {
+            "latitude": 43.0,
+            "longitude": -89.2
+          },
+          {
+            "latitude": 43.0,
+            "longitude": -89.55
+          }
+        ]
+      },
+      "contains": [
+        "Downtown Madison Pet Clinic"
+      ],
+      "excludes": [
+        "Milwaukee Pet Clinic"
+      ]
+    },
+    {
+      "name": "shouldReturnClinicsWithinDrawnPolygonAsJson",
+      "endpoint": "/clinics/within",
+      "payload": {
+        "coordinates": [
+          {
+            "latitude": 43.0,
+            "longitude": -89.55
+          },
+          {
+            "latitude": 43.2,
+            "longitude": -89.55
+          },
+          {
+            "latitude": 43.2,
+            "longitude": -89.2
+          },
+          {
+            "latitude": 43.0,
+            "longitude": -89.2
+          },
+          {
+            "latitude": 43.0,
+            "longitude": -89.55
+          }
+        ]
+      },
+      "contains": [
+        "Downtown Madison Pet Clinic",
+        "Monona Pet Clinic"
+      ],
+      "excludes": [
+        "Milwaukee Pet Clinic"
+      ]
+    },
+    {
+      "name": "shouldReturnClinicsWithinConcavePolygonAsJson",
+      "endpoint": "/clinics/within",
+      "payload": {
+        "coordinates": [
+          {
+            "latitude": 43.0735,
+            "longitude": -89.386
+          },
+          {
+            "latitude": 43.0755,
+            "longitude": -89.386
+          },
+          {
+            "latitude": 43.0755,
+            "longitude": -89.3825
+          },
+          {
+            "latitude": 43.0746,
+            "longitude": -89.3825
+          },
+          {
+            "latitude": 43.0746,
+            "longitude": -89.3835
+          },
+          {
+            "latitude": 43.0735,
+            "longitude": -89.3835
+          },
+          {
+            "latitude": 43.0735,
+            "longitude": -89.386
+          }
+        ]
+      },
+      "contains": [
+        "Downtown Madison Pet Clinic",
+        "Capitol Square Pet Clinic"
+      ],
+      "excludes": [
+        "University Pet Clinic",
+        "Milwaukee Pet Clinic"
+      ]
+    },
+    {
+      "name": "shouldReturnClinicsIntersectingLineAsJson",
+      "endpoint": "/clinics/intersects",
+      "payload": {
+        "coordinates": [
+          {
+            "latitude": 43.065,
+            "longitude": -89.55
+          },
+          {
+            "latitude": 43.11,
+            "longitude": -89.33
+          },
+          {
+            "latitude": 43.19,
+            "longitude": -89.2
+          }
+        ]
+      },
+      "contains": [
+        "West Madison Pet Clinic",
+        "East Madison Pet Clinic",
+        "Sun Prairie Pet Clinic"
+      ],
+      "excludes": [
+        "Downtown Madison Pet Clinic",
+        "Janesville Pet Clinic"
+      ]
+    },
+    {
+      "name": "shouldReturnClinicsIntersectingDrawnMultiPointLineAsJson",
+      "endpoint": "/clinics/intersects",
+      "payload": {
+        "coordinates": [
+          {
+            "latitude": 43.065,
+            "longitude": -89.55
+          },
+          {
+            "latitude": 43.11,
+            "longitude": -89.33
+          },
+          {
+            "latitude": 43.19,
+            "longitude": -89.2
+          }
+        ]
+      },
+      "contains": [
+        "West Madison Pet Clinic",
+        "East Madison Pet Clinic",
+        "Sun Prairie Pet Clinic"
+      ],
+      "excludes": [
+        "Downtown Madison Pet Clinic"
+      ]
+    },
+    {
+      "name": "shouldReturnClinicsIntersectingDrawnLineAsJson",
+      "endpoint": "/clinics/intersects",
+      "payload": {
+        "coordinates": [
+          {
+            "latitude": 43.065,
+            "longitude": -89.55
+          },
+          {
+            "latitude": 43.19,
+            "longitude": -89.2
+          }
+        ]
+      },
+      "contains": [
+        "West Madison Pet Clinic",
+        "Sun Prairie Pet Clinic"
+      ],
+      "excludes": [
+        "Downtown Madison Pet Clinic"
+      ]
+    },
+    {
+      "name": "shouldReturnNearbyClinicsAsJson",
+      "endpoint": "/clinics/nearby",
+      "payload": {
+        "latitude": 43.0745,
+        "longitude": -89.384,
+        "radiusMeters": 350
+      },
+      "contains": [
+        "Downtown Madison Pet Clinic",
+        "Capitol Square Pet Clinic",
+        "\"latitude\":43.0748"
+      ],
+      "excludes": [
+        "University Pet Clinic"
+      ]
+    },
+    {
+      "name": "shouldReturnNearbyClinicsFilteredByBooleanFlags",
+      "endpoint": "/clinics/nearby",
+      "payload": {
+        "latitude": 43.0745,
+        "longitude": -89.384,
+        "radiusMeters": 5000,
+        "acceptingNewPatients": true,
+        "emergencyService": true
+      },
+      "contains": [
+        "Downtown Madison Pet Clinic",
+        "East Madison Pet Clinic",
+        "\"acceptingNewPatients\":true",
+        "\"emergencyService\":true"
+      ],
+      "excludes": [
+        "Capitol Square Pet Clinic",
+        "University Pet Clinic"
+      ]
+    }
+  ]
+}

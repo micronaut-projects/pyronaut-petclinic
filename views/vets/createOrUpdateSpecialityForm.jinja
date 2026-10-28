@@ -1,0 +1,43 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-list me-3"></i>{{ (msg["speciality.add"] if isNew else msg["speciality.edit"])|e }}</h1>
+            <p>{{ msg["speciality.formHelp"]|e }}</p>
+        </div>
+    </div>
+    <main class="container flex-grow-1 py-4">
+        {% if saved %}
+            <div id="speciality-saved-alert" class="alert alert-success" role="status">{{ msg["speciality.saved"]|e }}</div>
+        {% endif %}
+        {% if duplicate %}
+            <div class="alert alert-warning" role="alert">{{ msg["speciality.duplicate"]|e }}</div>
+        {% endif %}
+        <div id="speciality-feedback" class="alert" role="status" aria-live="polite" hidden
+             data-saved="{{ msg["speciality.saved"]|e }}"
+             data-error="{{ msg["speciality.requestFailed"]|e }}"
+             data-network-error="{{ msg["speciality.networkError"]|e }}"></div>
+        <section class="card">
+            <div class="card-body">
+                <form id="speciality-form" method="post" action="{{ ("/vets/specialities" if isNew else "/vets/specialities/" ~ specialityForm.id)|e }}">
+                    {% if not isNew %}
+                        <input type="hidden" name="id" value="{{ specialityForm.id|e }}">
+                    {% endif %}
+                    <div class="mb-3">
+                        <label for="speciality-name" class="form-label">{{ msg["speciality.name"]|e }}</label>
+                        <input id="speciality-name" name="name" class="form-control" maxlength="80" required
+                               value="{{ (specialityForm.name if specialityForm.name != none else "")|e }}">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-floppy-disk me-1"></i>{{ msg["button.save"]|e }}
+                        </button>
+                        <a href="/vets/specialities" class="btn btn-outline-secondary">{{ msg["button.cancel"]|e }}</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+    <script src="/resources/js/speciality-form.js" defer></script>
+{% endblock %}

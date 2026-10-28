@@ -1,9 +1,325 @@
 {% extends "_layout.jinja" %}
 {% block content %}
-{% if error %}<main class="container flex-grow-1 py-5"><div class="alert alert-warning">{{ error|e }}</div></main>
-{% else %}
-<div class="page-header"><div class="container"><div class="d-flex align-items-center"><div class="detail-avatar me-4"><span>{{ owner.firstName[0]|e }}{{ owner.lastName[0]|e }}</span></div><div><h1>{{ owner.firstName|e }} {{ owner.lastName|e }}</h1><p class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>{{ owner.city|e }}</p></div></div></div></div>
-<main class="container flex-grow-1 py-4"><a href="/owners/find" class="btn btn-secondary mb-4"><i class="fas fa-arrow-left me-2"></i>Back to Search</a><div class="row g-4"><div class="col-lg-4"><div class="detail-card animate-fade-in-up"><div class="card-header"><h5 class="mb-0"><i class="fas fa-user me-2"></i>Owner Information</h5></div><div class="detail-body"><div class="info-row"><div class="info-label">Name</div><div class="info-value">{{ owner.firstName|e }} {{ owner.lastName|e }}</div></div><div class="info-row"><div class="info-label">Address</div><div class="info-value">{{ owner.address|e }}</div></div><div class="info-row"><div class="info-label">City</div><div class="info-value">{{ owner.city|e }}</div></div><div class="info-row"><div class="info-label">Phone</div><div class="info-value">{{ owner.telephone|e }}</div></div><div class="d-flex gap-2 mt-4"><a href="/owners/{{ owner.id }}/edit" class="btn btn-primary flex-grow-1"><i class="fas fa-edit me-2"></i>Edit</a><a href="/owners/{{ owner.id }}/pets/new" class="btn btn-success flex-grow-1"><i class="fas fa-plus me-2"></i>Add Pet</a></div></div></div></div>
-<div class="col-lg-8"><div class="card animate-fade-in-up stagger-1"><div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0"><i class="fas fa-paw me-2"></i>Pets & Visits</h5><span class="badge bg-white text-primary">{{ pets|length }} pets</span></div><div class="card-body">{% for pet in pets %}<div class="pet-card mb-3"><div class="row align-items-center"><div class="col-md-4"><div class="d-flex align-items-center"><div class="pet-icon {{ pet.type|default('dog', true)|lower|e }} me-3"><i class="fas fa-paw"></i></div><div><h6 class="mb-0">{{ pet.name|e }}</h6><small class="text-muted">{{ pet.type|default('Unknown', true)|e }}</small></div></div></div><div class="col-md-3"><small class="text-muted d-block">Birth Date</small><span>{{ pet.birthDate|e }}</span></div><div class="col-md-5 text-md-end mt-3 mt-md-0"><a href="/owners/{{ owner.id }}/pets/{{ pet.id }}/edit" class="btn btn-sm btn-outline-primary me-2"><i class="fas fa-edit"></i> Edit</a><a href="/owners/{{ owner.id }}/pets/{{ pet.id }}/visits/new" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> Add Visit</a></div></div>{% if pet.visits %}<div class="mt-3 pt-3 border-top"><h6 class="text-muted mb-3"><i class="fas fa-calendar-alt me-2"></i>Visit History</h6><div class="visit-timeline">{% for visit in pet.visits %}<div class="visit-item"><div class="visit-date">{{ visit.date|e }}</div><div class="visit-description">{{ visit.description|e }}</div></div>{% endfor %}</div></div>{% endif %}</div>{% else %}<div class="text-center py-5"><h5>No Pets Yet</h5><p class="text-muted">This owner hasn't registered any pets.</p><a href="/owners/{{ owner.id }}/pets/new" class="btn btn-success"><i class="fas fa-plus me-2"></i>Add First Pet</a></div>{% endfor %}</div></div></div></div></main>
-{% endif %}
+
+<div class="page-header">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <div class="detail-avatar me-4">
+                    <span>
+                        <span data-owner-field="initials">{{ (owner.firstName[:1] if owner.firstName != none and (owner.firstName|length) > 0 else "?")|e }}{{ (owner.lastName[:1] if owner.lastName != none and (owner.lastName|length) > 0 else "?")|e }}</span>
+                    </span>
+                </div>
+                <div>
+                    <h1 data-owner-field="displayName">{{ owner.firstName|e }} {{ owner.lastName|e }}</h1>
+                    <p class="mb-0"><i class="fas fa-map-marker-alt me-2"></i><span data-owner-field="city">{{ owner.city|e }}</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="container flex-grow-1 py-4">
+        <a href="/owners/find" class="btn btn-secondary mb-4">
+            <i class="fas fa-arrow-left me-2"></i>{{ msg["owner.backToSearch"]|e }}
+        </a>
+
+        {% if oracleEnabled %}
+            <ul class="nav nav-tabs mb-4" role="tablist" aria-label="{{ msg["owner.details"]|e }}">
+                <li class="nav-item" role="presentation">
+                    <a id="owner-details-tab" class="nav-link active"
+                       href="#owner-details-panel" role="tab">
+                        {{ msg["owner.details"]|e }}
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a id="care-record-tab" class="nav-link"
+                       href="#care-record-panel" role="tab">
+                        <i class="fas fa-code me-2"></i>{{ msg["nav.ownerCareRecord"]|e }}
+                    </a>
+                </li>
+            </ul>
+        {% endif %}
+
+        <div id="owner-details-panel" class="row g-4">
+            <div class="col-lg-4">
+                <div class="detail-card animate-fade-in-up">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>{{ msg["owner.information"]|e }}</h5>
+                    </div>
+                    <div class="detail-body">
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-user me-2"></i>{{ msg["owner.name"]|e }}</div>
+                            <div class="info-value" data-owner-field="displayName">{{ owner.firstName|e }} {{ owner.lastName|e }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-home me-2"></i>{{ msg["owner.address"]|e }}</div>
+                            <div class="info-value" data-owner-field="address">{{ owner.address|e }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-city me-2"></i>{{ msg["owner.city"]|e }}</div>
+                            <div class="info-value" data-owner-field="city">{{ owner.city|e }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-phone me-2"></i>{{ msg["owner.phone"]|e }}</div>
+                            <div class="info-value" data-owner-field="telephone">{{ owner.telephone|e }}</div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <a href="/owners/{{ owner.id|e }}/edit" class="btn btn-primary flex-grow-1">
+                                <i class="fas fa-edit me-2"></i>{{ msg["button.edit"]|e }}
+                            </a>
+                            <a href="/owners/{{ owner.id|e }}/pets/new" class="btn btn-success flex-grow-1">
+                                <i class="fas fa-plus me-2"></i>{{ msg["button.addPet"]|e }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card animate-fade-in-up stagger-1">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-paw me-2"></i>{{ msg["owner.petsAndVisits"]|e }}</h5>
+                        <span class="badge bg-white text-primary">
+                            {{ (msg["pets.count"]|replace("{0}", ((owner.pets|length) if owner.pets != none else 0)))|e }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        {% if owner.pets == none or (not owner.pets) %}
+                            <div class="text-center py-5">
+                                <div class="empty-state-icon mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                                    <i class="fas fa-paw"></i>
+                                </div>
+                                <h5>{{ msg["owner.noPetsYet"]|e }}</h5>
+                                <p class="text-muted">{{ msg["owner.noPetsMessage"]|e }}</p>
+                                <a href="/owners/{{ owner.id|e }}/pets/new" class="btn btn-success">
+                                    <i class="fas fa-plus me-2"></i>{{ msg["owner.addFirstPet"]|e }}
+                                </a>
+                            </div>
+                        {% else %}
+                            {% for pet in owner.pets %}
+                                <div class="pet-card mb-3" data-pet-id="{{ pet.id|e }}">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="pet-icon me-3 {{ pet.typeClass|e }}">
+                                                    <i class="fas {{ pet.icon|e }}"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0" data-pet-name>{{ pet.name|e }}</h6>
+                                                    <small class="text-muted">{{ (pet.type.name if pet.type != none else msg["visit.unknown"])|e }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="text-muted d-block">{{ msg["pet.birthDate"]|e }}</small>
+                                            <span data-pet-birth-date>{{ (pet.birthDate if pet.birthDate != none else "")|e }}</span>
+                                        </div>
+                                        <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                                            <a href="/owners/{{ owner.id|e }}/pets/{{ pet.id|e }}/edit" class="btn btn-sm btn-outline-primary me-2">
+                                                <i class="fas fa-edit"></i> {{ msg["button.edit"]|e }}
+                                            </a>
+                                            <a href="/owners/{{ owner.id|e }}/pets/{{ pet.id|e }}/visits/new" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-plus"></i> {{ msg["button.addVisit"]|e }}
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    {% if pet.visits != none and not (not pet.visits) %}
+                                        <div class="mt-3 pt-3 border-top">
+                                            <h6 class="text-muted mb-3"><i class="fas fa-calendar-alt me-2"></i>{{ msg["pet.visitHistory"]|e }}</h6>
+                                            <div class="visit-timeline">
+                                                {% for visit in pet.visits %}
+                                                    <div class="visit-item" data-visit-id="{{ visit.id|e }}">
+                                                        <div class="visit-date" data-visit-date>{{ (visit.date if visit.date != none else "")|e }}</div>
+                                                        <div class="visit-description" data-visit-description>{{ visit.description|e }}</div>
+                                                        <div class="visit-meta">
+                                                            <span><i class="fas fa-clock me-1"></i>{{ (visit.durationInMinutes ~ " " ~ msg["visit.minutes"] if visit.durationInMinutes != none else "")|e }}</span>
+                                                            <span><i class="fas fa-calendar-check me-1"></i>{{ (visit.periodInMonths ~ " " ~ msg["visit.months"] if visit.periodInMonths != none else "")|e }}</span>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if oracleEnabled %}
+            <div id="care-record-panel" hidden>
+            <div class="mb-4">
+                <h2 class="h3 mb-1">{{ msg["jsonDuality.title"]|e }}</h2>
+                <p class="text-muted mb-0">{{ msg["jsonDuality.subtitle"]|e }}</p>
+            </div>
+            <div id="care-record-page" data-document-url="/owners/{{ owner.id|e }}/care-record"
+                 data-loading-label="{{ msg["jsonDuality.loading"]|e }}" data-load-error-label="{{ msg["jsonDuality.loadError"]|e }}"
+                 data-save-label="{{ msg["jsonDuality.saveSuccess"]|e }}" data-save-error-label="{{ msg["jsonDuality.saveError"]|e }}"
+                 data-conflict-label="{{ msg["jsonDuality.conflict"]|e }}" data-invalid-label="{{ msg["jsonDuality.invalid"]|e }}">
+                <div class="row g-4">
+                    <div class="col-lg-4">
+                        <div class="card animate-fade-in-up">
+                            <div class="card-header"><h5 class="mb-0">{{ msg["jsonDuality.howItWorks"]|e }}</h5></div>
+                            <div class="card-body">
+                                <p>{{ msg["jsonDuality.explanation"]|e }}</p>
+                                <ul class="mb-0">
+                                    <li><code>@JsonView</code> {{ msg["jsonDuality.ownerMapping"]|e }}</li>
+                                    <li><code>@JsonSubView</code> {{ msg["jsonDuality.nestedMapping"]|e }}</li>
+                                    <li><code>@Relation</code> {{ msg["jsonDuality.collectionMapping"]|e }}</li>
+                                    <li>{{ msg["jsonDuality.repositoryMapping"]|e }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8">
+                        <div class="card animate-fade-in-up stagger-1">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-code me-2"></i>{{ msg["jsonDuality.document"]|e }}</h5>
+                                <span class="badge bg-secondary">{{ msg["jsonDuality.oracleOnly"]|e }}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">{{ msg["jsonDuality.editInstructions"]|e }}</p>
+                                <div id="document-status" class="mt-3" role="status" aria-live="polite" hidden></div>
+                                <textarea id="owner-document" class="form-control font-monospace" rows="25"
+                                          spellcheck="false" aria-label="{{ msg["jsonDuality.document"]|e }}"></textarea>
+                                <div class="d-flex flex-wrap gap-2 mt-3">
+                                    <button id="reload-document" class="btn btn-outline-secondary" type="button">
+                                        <i class="fas fa-rotate me-2"></i>{{ msg["jsonDuality.reload"]|e }}
+                                    </button>
+                                    <button id="save-document" class="btn btn-primary" type="button">
+                                        <i class="fas fa-floppy-disk me-2"></i>{{ msg["jsonDuality.save"]|e }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <script>
+                (() => {
+                    const page = document.getElementById("care-record-page");
+                    const detailsPanel = document.getElementById("owner-details-panel");
+                    const carePanel = document.getElementById("care-record-panel");
+                    const detailsTab = document.getElementById("owner-details-tab");
+                    const careTab = document.getElementById("care-record-tab");
+                    const editor = document.getElementById("owner-document");
+                    const status = document.getElementById("document-status");
+                    const documentUrl = page.dataset.documentUrl;
+                    let documentLoaded = false;
+                    let documentLoading = false;
+                    const showPanel = (careRecord) => {
+                        detailsPanel.hidden = careRecord;
+                        carePanel.hidden = !careRecord;
+                        detailsTab.classList.toggle("active", !careRecord);
+                        careTab.classList.toggle("active", careRecord);
+                    };
+                    const setStatus = (message, style = "info") => {
+                        const hasMessage = Boolean(message);
+                        status.hidden = !hasMessage;
+                        status.className = hasMessage ? "mt-3 alert alert-" + style : "mt-3";
+                        status.textContent = hasMessage ? message : "";
+                    };
+                    const loadDocument = async (force = false) => {
+                        if ((!force && documentLoaded) || documentLoading) return;
+                        documentLoading = true;
+                        setStatus(page.dataset.loadingLabel, "secondary");
+                        try {
+                            const response = await fetch(documentUrl, { headers: { Accept: "application/json" } });
+                            if (!response.ok) throw new Error(page.dataset.loadErrorLabel);
+                            editor.value = JSON.stringify(await response.json(), null, 2);
+                            documentLoaded = true;
+                            setStatus("");
+                        } catch (error) {
+                            setStatus(error.message || page.dataset.loadErrorLabel, "danger");
+                        } finally {
+                            documentLoading = false;
+                        }
+                    };
+                    const updateOwnerDetails = (updatedDocument) => {
+                        const displayName = (updatedDocument.firstName || "") + " " + (updatedDocument.lastName || "");
+                        window.document.querySelectorAll('[data-owner-field="displayName"]').forEach((element) => {
+                            element.textContent = displayName;
+                        });
+                        window.document.querySelectorAll('[data-owner-field="initials"]').forEach((element) => {
+                            element.textContent = (updatedDocument.firstName?.[0] || "?") + (updatedDocument.lastName?.[0] || "?");
+                        });
+                        for (const field of ["address", "city", "telephone"]) {
+                            window.document.querySelectorAll('[data-owner-field="' + field + '"]').forEach((element) => {
+                                element.textContent = updatedDocument[field] || "";
+                            });
+                        }
+                        for (const pet of updatedDocument.pets || []) {
+                            const petCard = detailsPanel.querySelector('[data-pet-id="' + pet.id + '"]');
+                            if (!petCard) continue;
+                            petCard.querySelector("[data-pet-name]").textContent = pet.name || "";
+                            petCard.querySelector("[data-pet-birth-date]").textContent = (pet.birthDate || "").slice(0, 10);
+                            for (const visit of pet.visits || []) {
+                                const visitItem = petCard.querySelector('[data-visit-id="' + visit.id + '"]');
+                                if (!visitItem) continue;
+                                visitItem.querySelector("[data-visit-date]").textContent = (visit.date || "").slice(0, 10);
+                                visitItem.querySelector("[data-visit-description]").textContent = visit.description || "";
+                            }
+                        }
+                    };
+                    const updateTabUrl = (tab) => {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("tab", tab);
+                        window.history.replaceState(null, "", url);
+                    };
+                    document.getElementById("reload-document").addEventListener("click", () => loadDocument(true));
+                    detailsTab.addEventListener("click", (event) => {
+                        event.preventDefault();
+                        showPanel(false);
+                        updateTabUrl("owner-details");
+                    });
+                    careTab.addEventListener("click", (event) => {
+                        event.preventDefault();
+                        showPanel(true);
+                        updateTabUrl("care-record");
+                        void loadDocument();
+                    });
+                    document.getElementById("save-document").addEventListener("click", async () => {
+                        let document;
+                        try {
+                            document = JSON.parse(editor.value);
+                        } catch {
+                            setStatus(page.dataset.invalidLabel, "warning");
+                            return;
+                        }
+                        try {
+                            const response = await fetch(documentUrl, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                                body: JSON.stringify(document)
+                            });
+                            const result = await response.json();
+                            if (response.status === 409) {
+                                setStatus(result.message || page.dataset.conflictLabel, "warning");
+                                return;
+                            }
+                            if (!response.ok) {
+                                setStatus(result.message || page.dataset.saveErrorLabel, "danger");
+                                return;
+                            }
+                            editor.value = JSON.stringify(result, null, 2);
+                            updateOwnerDetails(result);
+                            setStatus(page.dataset.saveLabel, "success");
+                        } catch (error) {
+                            setStatus(error.message || page.dataset.saveErrorLabel, "danger");
+                        }
+                    });
+                    const selectedTab = new URLSearchParams(window.location.search).get("tab");
+                    const showCareRecord = selectedTab === "care-record";
+                    showPanel(showCareRecord);
+                    if (showCareRecord) {
+                        void loadDocument();
+                    }
+                })();
+            </script>
+        {% endif %}
+    </main>
 {% endblock %}

@@ -1,5 +1,211 @@
 {% extends "_layout.jinja" %}
 {% block content %}
-{% if error %}<main class="container py-5"><div class="alert alert-warning">{{ error|e }}</div></main>{% else %}
-<div class="page-header"><div class="container"><h1><i class="fas fa-calendar-plus me-3"></i>New Visit</h1><p>Name: {{ pet.name|e }}</p></div></div><main class="container flex-grow-1 py-4"><a href="/owners/{{ owner.id }}" class="btn btn-secondary mb-4">Back to Owner</a><div class="form-container"><form action="/owners/{{ owner.id }}/pets/{{ pet.id }}/visits/new" method="post"><label for="date" class="form-label">Visit Date</label><input type="date" class="form-control {% if validationErrors.date %}is-invalid{% endif %}" id="date" name="date" value="{{ visit.date|default('', true)|e }}" required><div class="invalid-feedback">{{ validationErrors.date|default('Visit date is required.', true)|e }}</div><label for="description" class="form-label mt-3">Description</label><textarea class="form-control {% if validationErrors.description %}is-invalid{% endif %}" id="description" name="description" rows="4" required>{{ visit.description|default('', true)|e }}</textarea><div class="invalid-feedback">{{ validationErrors.description|default('Description is required.', true)|e }}</div><button type="submit" class="btn btn-primary mt-4">Add Visit</button></form></div></main>{% endif %}
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-calendar-plus me-3"></i>{{ msg["visit.new"]|e }}</h1>
+            {% if pet != none %}
+                <p>
+                    <i class="fas fa-paw me-2"></i>{{ msg["pet.name"]|e }}: {{ pet.name|e }}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <main class="container flex-grow-1 py-4">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <a href="/owners/{{ owner.id|e }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>{{ msg["pet.backToOwner"]|e }}
+                </a>
+            </div>
+
+            <div class="col-lg-4 mb-4">
+                {% if pet != none %}
+                    <div class="detail-card animate-fade-in-up">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-paw me-2"></i>{{ msg["pet.information"]|e }}</h5>
+                        </div>
+                        <div class="detail-body">
+                            <div class="text-center mb-4">
+                                <div class="pet-icon mx-auto mb-3 {{ pet.typeClass|e }}" style="width: 80px; height: 80px; font-size: 2rem;">
+                                    <i class="fas {{ pet.icon|e }}"></i>
+                                </div>
+                                <h5>{{ pet.name|e }}</h5>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">{{ msg["pet.type"]|e }}</div>
+                                <div class="info-value">{{ (pet.type.name if pet.type != none else msg["visit.unknown"])|e }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">{{ msg["pet.birthDate"]|e }}</div>
+                                <div class="info-value">{{ (pet.birthDate if pet.birthDate != none else "")|e }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">{{ msg["pet.owner"]|e }}</div>
+                                <div class="info-value">{{ owner.firstName|e }} {{ owner.lastName|e }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if pet.visits != none and not (not pet.visits) %}
+                        <div class="card mt-4 animate-fade-in-up stagger-1">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-history me-2"></i>{{ msg["pet.previousVisits"]|e }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="visit-timeline">
+                                    {% for previousVisit in pet.visits %}
+                                        <div class="visit-item">
+                                            <div class="visit-date">{{ (previousVisit.date if previousVisit.date != none else "")|e }}</div>
+                                            <div class="visit-description">{{ previousVisit.description|e }}</div>
+                                            <div class="visit-meta">
+                                                <span><i class="fas fa-clock me-1"></i>{{ (previousVisit.durationInMinutes ~ " " ~ msg["visit.minutes"] if previousVisit.durationInMinutes != none else "")|e }}</span>
+                                                <span><i class="fas fa-calendar-check me-1"></i>{{ (previousVisit.periodInMonths ~ " " ~ msg["visit.months"] if previousVisit.periodInMonths != none else "")|e }}</span>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div class="col-lg-8">
+                <div class="form-container animate-fade-in-up stagger-2">
+                    <div class="text-center mb-4">
+                        <div class="feature-icon gradient-3 mx-auto mb-3">
+                            <i class="fas fa-stethoscope"></i>
+                        </div>
+                        <h4>{{ msg["visit.scheduleNew"]|e }}</h4>
+                        <p class="text-muted">{{ msg["visit.recordFor"]|e }} {{ pet.name|e }}</p>
+                    </div>
+
+                    {% if validationErrors != none and not (not validationErrors) %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ msg["validation.fixErrors"]|e }}
+                        </div>
+                    {% endif %}
+
+                    <form id="visit-form" action="/owners/{{ owner.id|e }}/pets/{{ pet.id|e }}/visits/new" method="post" class="needs-validation" data-submit-failed-message="{{ msg["validation.submitFailed"]|e }}" novalidate>
+                        <div class="mb-4">
+                            <label for="date" class="form-label">
+                                <i class="fas fa-calendar me-2 text-primary"></i>{{ msg["visit.visitDate"]|e }}
+                            </label>
+                            <input type="date" class="form-control {{ ("is-invalid" if validationErrors != none and validationErrors["date"] else "")|e }}" id="date" name="date"
+                                   value="{{ (visit.date if visit != none and visit.date != none else "")|e }}" required>
+                            {% if validationErrors != none and validationErrors["date"] %}
+                                <div class="invalid-feedback">{{ validationErrors["date"]|e }}</div>
+                            {% else %}
+                                <div class="invalid-feedback">{{ msg["validation.visitDate.required"]|e }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-notes-medical me-2 text-primary"></i>{{ msg["visit.description"]|e }}
+                            </label>
+                            <textarea class="form-control {{ ("is-invalid" if validationErrors != none and validationErrors["description"] else "")|e }}" id="description" name="description" rows="4" minlength="1" maxlength="255" data-required-message="{{ msg["validation.description.required"]|e }}" required>{{ (visit.description if visit != none and visit.description != none else "")|e }}</textarea>
+                            {% if validationErrors != none and validationErrors["description"] %}
+                                <div class="invalid-feedback">{{ validationErrors["description"]|e }}</div>
+                            {% else %}
+                                <div class="invalid-feedback">{{ msg["validation.description.required"]|e }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="durationMinutes" class="form-label">
+                                    <i class="fas fa-clock me-2 text-primary"></i>{{ msg["visit.durationMinutes"]|e }}
+                                </label>
+                                <input type="number" class="form-control {{ ("is-invalid" if validationErrors != none and validationErrors["durationMinutes"] else "")|e }}"
+                                       id="durationMinutes" name="durationMinutes" min="1"
+                                       value="{{ (visit.durationMinutes if visit != none and visit.durationMinutes != none else "30")|e }}" required>
+                                {% if validationErrors != none and validationErrors["durationMinutes"] %}
+                                    <div class="invalid-feedback">{{ validationErrors["durationMinutes"]|e }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="followUpPeriodMonths" class="form-label">
+                                    <i class="fas fa-calendar-check me-2 text-primary"></i>{{ msg["visit.followUpPeriodMonths"]|e }}
+                                </label>
+                                <input type="number" class="form-control {{ ("is-invalid" if validationErrors != none and validationErrors["followUpPeriodMonths"] else "")|e }}"
+                                       id="followUpPeriodMonths" name="followUpPeriodMonths" min="1"
+                                       value="{{ (visit.followUpPeriodMonths if visit != none and visit.followUpPeriodMonths != none else "6")|e }}" required>
+                                {% if validationErrors != none and validationErrors["followUpPeriodMonths"] %}
+                                    <div class="invalid-feedback">{{ validationErrors["followUpPeriodMonths"]|e }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                                <i class="fas fa-plus me-2"></i>{{ msg["button.addVisit"]|e }}
+                            </button>
+                            <a href="/owners/{{ owner.id|e }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times me-2"></i>{{ msg["button.cancel"]|e }}
+                            </a>
+                        </div>
+                    </form>
+
+                    <script>
+                        (() => {
+                            const form = document.getElementById('visit-form');
+                            const description = document.getElementById('description');
+
+                            description.addEventListener('input', () => {
+                                description.setCustomValidity(
+                                    description.value.trim().length === 0
+                                        ? description.dataset.requiredMessage
+                                        : ''
+                                );
+                            });
+
+                            form.addEventListener('submit', async (event) => {
+                                event.preventDefault();
+                                description.dispatchEvent(new Event('input'));
+                                form.classList.add('was-validated');
+
+                                if (!form.checkValidity()) {
+                                    return;
+                                }
+
+                                const formData = new FormData(form);
+                                const payload = {
+                                    date: formData.get('date'),
+                                    description: description.value.trim(),
+                                    durationMinutes: Number(formData.get('durationMinutes')),
+                                    followUpPeriodMonths: Number(formData.get('followUpPeriodMonths'))
+                                };
+
+                                try {
+                                    const response = await fetch(form.action, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify(payload)
+                                    });
+
+                                    const responseBody = await response.text();
+                                    if (response.redirected) {
+                                        window.location.assign(response.url);
+                                    } else if (responseBody) {
+                                        document.open();
+                                        document.write(responseBody);
+                                        document.close();
+                                    }
+                                } catch (error) {
+                                    window.alert(form.dataset.submitFailedMessage);
+                                }
+                            });
+                        })();
+                    </script>
+                </div>
+            </div>
+        </div>
+    </main>
 {% endblock %}

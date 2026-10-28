@@ -1,0 +1,67 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-hand-holding-medical me-3"></i>{{ (msg["clinic.servicesTitle"]|replace("{0}", clinic.name))|e }}</h1>
+            <p>{{ msg["clinic.servicesSubtitle"]|e }}</p>
+        </div>
+    </div>
+
+    <main class="container flex-grow-1 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <a href="/clinics" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>{{ msg["clinic.servicesBack"]|e }}
+                </a>
+                <span class="text-muted ms-3"><i class="fas fa-location-dot me-1"></i>{{ clinic.city|e }}</span>
+            </div>
+            <a href="/clinics/{{ clinic.id|e }}/services/new" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>{{ msg["clinic.servicesNew"]|e }}
+            </a>
+        </div>
+
+        {% if services == none or (not services) %}
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-hand-holding-medical"></i></div>
+                <h3>{{ msg["clinic.servicesEmpty"]|e }}</h3>
+                <a href="/clinics/{{ clinic.id|e }}/services/new" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>{{ msg["clinic.servicesNew"]|e }}
+                </a>
+            </div>
+        {% else %}
+            <div class="card shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ msg["clinic.servicesCode"]|e }}</th>
+                                <th>{{ msg["clinic.servicesName"]|e }}</th>
+                                <th>{{ msg["clinic.servicesDescription"]|e }}</th>
+                                <th>{{ msg["clinic.servicesPrice"]|e }}</th>
+                                <th>{{ msg["clinic.servicesDuration"]|e }}</th>
+                                <th class="text-end"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for offering in services %}
+                                <tr>
+                                    <td><code>{{ offering.serviceCode|e }}</code></td>
+                                    <td class="fw-semibold">{{ offering.name|e }}</td>
+                                    <td>{{ (offering.description if offering.description != none else "—")|e }}</td>
+                                    <td>{{ offering.price|e }}</td>
+                                    <td>{{ (msg["clinic.servicesMinutes"]|replace("{0}", offering.durationMinutes))|e }}</td>
+                                    <td class="text-end">
+                                        <a href="/clinics/{{ clinic.id|e }}/services/{{ offering.serviceCode|e }}/edit" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-pen me-1"></i>{{ msg["clinic.servicesEdit"]|e }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    </main>
+{% endblock %}
