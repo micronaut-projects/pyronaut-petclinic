@@ -14,6 +14,7 @@ from petclinic.repositories.pets import PetRepository, PetTypeRepository
 from petclinic.repositories.vets import SpecialityRepository, VetRepository
 from petclinic.repositories.visits import VisitRepository
 from petclinic.services.durations import duration_minutes
+from petclinic.services.loyalty import OwnerLoyaltyService
 
 
 @Singleton
@@ -26,6 +27,7 @@ class ClinicService:
     visit_repository: Annotated[VisitRepository, Inject]
     vet_repository: Annotated[VetRepository, Inject]
     speciality_repository: Annotated[SpecialityRepository, Inject]
+    loyalty: Annotated[OwnerLoyaltyService, Inject]
 
     def find_owner_by_id(self, owner_id: int) -> Owner:
         """Return a persisted owner, raising the public 404 error if absent."""
@@ -46,7 +48,9 @@ class ClinicService:
         """Insert new owners and update existing owners in one call."""
 
         if owner.id is None:
-            return self.owner_repository.save(owner)
+            saved = self.owner_repository.save(owner)
+            self.loyalty.create_account(saved)
+            return saved
         return self.owner_repository.update(owner)
 
     def find_pet_by_id(self, pet_id: int) -> Pet:
@@ -57,6 +61,7 @@ class ClinicService:
 
     @Transactional
     def delete_owner(self, owner: Owner) -> None:
+        self.loyalty.delete_owner_data(owner)
         self.owner_repository.deleteById(owner.id)
 
     def find_all_pets(self) -> list[Pet]:
@@ -107,7 +112,9 @@ class ClinicService:
         """Persist a visit inside a Micronaut transaction."""
 
         if visit.id is None:
-            return self.visit_repository.save(visit)
+            saved = self.visit_repository.save(visit)
+            self.loyalty.award_visit(saved.pet.owner)
+            return saved
         return self.visit_repository.update(visit)
 
     @Cacheable("vets")
