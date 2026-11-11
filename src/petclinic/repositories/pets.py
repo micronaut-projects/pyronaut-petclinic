@@ -19,6 +19,10 @@ class PetRepository(GenericRepository[Pet, int], Protocol):
 
     @Join(value="type", type=Join.Type.FETCH)
     @Join(value="owner", type=Join.Type.FETCH)
+    def findAll(self) -> list[Pet]: ...
+
+    @Join(value="type", type=Join.Type.FETCH)
+    @Join(value="owner", type=Join.Type.FETCH)
     @Join(value="visits", type=Join.Type.LEFT_FETCH)
     def findOneById(self, id: int) -> Pet | None: ...
 
@@ -39,6 +43,10 @@ class PetTypeRepository(GenericRepository[PetType, int], Protocol):
 class H2PetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     @Query(value="SELECT p.* FROM PETS p WHERE p.OWNER_ID = :ownerId ORDER BY p.NAME", nativeQuery=True)
     def findByOwnerId(self, ownerId: int) -> list[Pet]: ...
+
+    @Join(value="type", type=Join.Type.FETCH)
+    @Join(value="owner", type=Join.Type.FETCH)
+    def findAll(self) -> list[Pet]: ...
 
     @Join(value="type", type=Join.Type.FETCH)
     @Join(value="owner", type=Join.Type.FETCH)
@@ -64,6 +72,10 @@ class OraclePetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
 
     @Join(value="type", type=Join.Type.FETCH)
     @Join(value="owner", type=Join.Type.FETCH)
+    def findAll(self) -> list[Pet]: ...
+
+    @Join(value="type", type=Join.Type.FETCH)
+    @Join(value="owner", type=Join.Type.FETCH)
     @Join(value="visits", type=Join.Type.LEFT_FETCH)
     def findOneById(self, id: int) -> Pet | None: ...
 
@@ -86,6 +98,10 @@ class MySqlPetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
 
     @Join(value="type", type=Join.Type.FETCH)
     @Join(value="owner", type=Join.Type.FETCH)
+    def findAll(self) -> list[Pet]: ...
+
+    @Join(value="type", type=Join.Type.FETCH)
+    @Join(value="owner", type=Join.Type.FETCH)
     @Join(value="visits", type=Join.Type.LEFT_FETCH)
     def findOneById(self, id: int) -> Pet | None: ...
 
@@ -105,6 +121,10 @@ class MySqlPetTypeRepository(PetTypeRepository, CrudRepository[PetType, int], Pr
 class PostgresPetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     @Query(value='SELECT p.* FROM "PETS" p WHERE p."OWNER_ID" = :ownerId ORDER BY p."NAME"', nativeQuery=True)
     def findByOwnerId(self, ownerId: int) -> list[Pet]: ...
+
+    @Join(value="type", type=Join.Type.FETCH)
+    @Join(value="owner", type=Join.Type.FETCH)
+    def findAll(self) -> list[Pet]: ...
 
     @Join(value="type", type=Join.Type.FETCH)
     @Join(value="owner", type=Join.Type.FETCH)

@@ -1,6 +1,7 @@
 """Integration checks for services."""
 
 import re
+import pytest
 
 
 def test_reference_service_lookup_operations(client, application_context):
@@ -41,6 +42,10 @@ def test_reference_service_lookup_operations(client, application_context):
     service.delete_visit(visit_id)
     assert service.find_visit_by_id(visit_id) is None
     service.delete_pet(pet_id)
-    assert service.find_pet_by_id(pet_id) is None
-    service.delete_owner(owner_id)
-    assert service.find_owner_by_id(owner_id) is None
+    HttpStatusException = java.type('io.micronaut.http.exceptions.HttpStatusException')
+    with pytest.raises(HttpStatusException):
+        service.find_pet_by_id(pet_id)
+    owner = service.find_owner_by_id(owner_id)
+    service.delete_owner(owner)
+    with pytest.raises(HttpStatusException):
+        service.find_owner_by_id(owner_id)

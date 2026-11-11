@@ -5,7 +5,7 @@ from typing import Annotated
 
 from jakarta.validation.constraints import Digits, NotBlank, NotNull
 from java.time import Duration, LocalDate, Period
-from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Relation
+from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Relation, Transient
 from micronaut.serde.annotation import Serdeable
 
 
@@ -67,8 +67,8 @@ class Pet:
     def get_type_id(self) -> int | None:
         return self.type.id if self.type is not None else None
 
-    def get_owner_id(self) -> int | None:
-        return self.owner.id if self.owner is not None else None
+    def get_owner_id(self) -> int:
+        return self.owner.id
 
 
 @Serdeable
@@ -86,3 +86,7 @@ class Visit:
 
     def is_new(self) -> bool:
         return self.id is None
+
+    @Transient
+    def get_pet_id(self) -> int:
+        return self.pet.id

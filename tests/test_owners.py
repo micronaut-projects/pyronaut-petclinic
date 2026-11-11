@@ -70,7 +70,7 @@ def test_owner_pet_visit_form_flow(client):
         f"{owner_url}/pets/new",
         data={"name": "", "birthDate": "", "typeId": ""},
     )
-    assert invalid_pet.status_code == 200
+    assert invalid_pet.status_code == 400
     assert "Birth date is required" in invalid_pet.text
     assert "Pet type is required" in invalid_pet.text, invalid_pet.text
 

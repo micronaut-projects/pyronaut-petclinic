@@ -4,7 +4,9 @@ from datetime import date
 
 from java.net import URI
 from java.time import Duration, LocalDate, Period
-from micronaut.http import HttpResponse
+from micronaut.http import HttpResponse, HttpStatus
+from micronaut.http.exceptions import HttpStatusException
+from micronaut.http.server.exceptions import NotFoundException
 from petclinic.dtos.patients import PetForm, VisitForm
 from petclinic.validation import violation_field
 
@@ -61,3 +63,21 @@ def persist_visit(form: VisitForm, pet, clinic_service, form_mapper):
     form.durationValue = Duration.ofMinutes(int(form.durationMinutes))
     form.periodValue = Period.ofMonths(int(form.followUpPeriodMonths)).normalized()
     clinic_service.save_visit(form_mapper.to_visit(form, pet))
+
+
+def page_owner(clinic_service, owner_id: int):
+    try:
+        return clinic_service.find_owner_by_id(owner_id)
+    except HttpStatusException as error:
+        if error.getStatus() == HttpStatus.NOT_FOUND:
+            raise NotFoundException()
+        raise
+
+
+def page_pet(clinic_service, pet_id: int):
+    try:
+        return clinic_service.find_pet_by_id(pet_id)
+    except HttpStatusException as error:
+        if error.getStatus() == HttpStatus.NOT_FOUND:
+            raise NotFoundException()
+        raise

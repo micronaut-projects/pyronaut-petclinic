@@ -8,7 +8,7 @@ from micronaut.http import HttpResponse, MediaType
 from micronaut.http.annotation import Body, Get, Post, QueryValue
 from micronaut.http.server.exceptions import NotFoundException
 from micronaut.views import View
-from petclinic.controllers.support import redirect_to, validation_errors
+from petclinic.controllers.support import redirect_to, validation_errors, page_owner
 from petclinic.dtos.patients import OwnerForm
 from petclinic.errors import entity_not_found
 from petclinic.mapper import FormMapper
@@ -66,9 +66,7 @@ def process_owner_creation_form(form: Annotated[OwnerForm, Body]):
 @Get("/owners/{ownerId}/edit")
 @View("owners/createOrUpdateOwnerForm")
 def init_owner_update_form(ownerId: int) -> dict:
-    owner = clinic_service.find_owner_by_id(ownerId)
-    if owner is None:
-        raise NotFoundException()
+    owner = page_owner(clinic_service, ownerId)
     return {"owner": form_mapper.to_owner_form(owner), "ownerId": ownerId, "isNew": False, "validationErrors": {}}
 
 
@@ -76,8 +74,6 @@ def init_owner_update_form(ownerId: int) -> dict:
 @View("owners/createOrUpdateOwnerForm")
 def process_owner_update_form(ownerId: int, form: Annotated[OwnerForm, Body]):
     existing = clinic_service.find_owner_by_id(ownerId)
-    if existing is None:
-        return entity_not_found()
     errors = validation_errors(form, validator)
     if errors:
         form.id = ownerId
@@ -89,7 +85,5 @@ def process_owner_update_form(ownerId: int, form: Annotated[OwnerForm, Body]):
 @Get("/owners/{ownerId}")
 @View("owners/ownerDetails")
 def show_owner(ownerId: int) -> dict:
-    owner = clinic_service.find_owner_by_id(ownerId)
-    if owner is None:
-        raise NotFoundException()
+    owner = page_owner(clinic_service, ownerId)
     return {"owner": owner_view_model(owner)}

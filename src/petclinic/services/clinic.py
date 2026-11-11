@@ -7,6 +7,7 @@ from jakarta.transaction import Transactional
 from java.time import Duration, LocalDate, Period
 from micronaut.cache.annotation import Cacheable
 from petclinic.models.patients import Owner, Pet, PetType, Visit
+from petclinic.errors import entity_not_found
 from petclinic.models.vets import Speciality, Vet
 from petclinic.repositories.owners import OwnerRepository
 from petclinic.repositories.pets import PetRepository, PetTypeRepository
@@ -26,10 +27,13 @@ class ClinicService:
     vet_repository: Annotated[VetRepository, Inject]
     speciality_repository: Annotated[SpecialityRepository, Inject]
 
-    def find_owner_by_id(self, owner_id: int) -> Owner | None:
-        """Return one owner or ``None`` when no row exists."""
+    def find_owner_by_id(self, owner_id: int) -> Owner:
+        """Return a persisted owner, raising the public 404 error if absent."""
 
-        return self.owner_repository.findOneById(owner_id)
+        owner = self.owner_repository.findOneById(owner_id)
+        if owner is None:
+            entity_not_found()
+        return owner
 
     def find_owner_by_last_name(self, last_name: str) -> list[Owner]:
         return list(self.owner_repository.findByLastNameContainingIgnoreCaseOrderByLastName(last_name))
@@ -45,12 +49,15 @@ class ClinicService:
             return self.owner_repository.save(owner)
         return self.owner_repository.update(owner)
 
-    def find_pet_by_id(self, pet_id: int) -> Pet | None:
-        return self.pet_repository.findOneById(pet_id)
+    def find_pet_by_id(self, pet_id: int) -> Pet:
+        pet = self.pet_repository.findOneById(pet_id)
+        if pet is None:
+            entity_not_found()
+        return pet
 
     @Transactional
-    def delete_owner(self, owner_id: int) -> None:
-        self.owner_repository.deleteById(owner_id)
+    def delete_owner(self, owner: Owner) -> None:
+        self.owner_repository.deleteById(owner.id)
 
     def find_all_pets(self) -> list[Pet]:
         return list(self.pet_repository.findAll())
@@ -89,8 +96,8 @@ class ClinicService:
             "id": visit.id,
             "date": str(visit.date),
             "description": visit.description,
-            "petName": visit.pet.name if visit.pet is not None else None,
-            "ownerName": f"{visit.pet.owner.firstName} {visit.pet.owner.lastName}" if visit.pet is not None and visit.pet.owner is not None else None,
+            "petName": visit.pet.name,
+            "ownerName": f"{visit.pet.owner.firstName} {visit.pet.owner.lastName}",
             "durationInMinutes": duration_minutes(visit.duration),
             "periodInMonths": visit.period.toTotalMonths(),
         } for visit in visits]

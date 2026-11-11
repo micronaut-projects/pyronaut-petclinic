@@ -42,12 +42,14 @@ def test_visit_interval_json_creation_matches_reference_pet_lookup(client):
     invalid = client.post(url, json={**data, "durationMinutes": 0}, allow_redirects=False)
     assert invalid.status_code == 400, invalid.text
     assert "durationMinutes" in invalid.json()["errors"]
-    # The reference resolves the pet independently of ownerId, including these URLs.
+    # Visit creation now rejects an owner/pet mismatch; pet editing retains its reference behavior.
     assert client.get(f"/owners/2/pets/{pet_id}/edit").status_code == 200
-    assert client.get(f"/owners/2/pets/{pet_id}/visits/new").status_code == 200
-    created = client.post(f"/owners/2/pets/{pet_id}/visits/new", json=data, allow_redirects=False)
+    assert client.get(f"/owners/2/pets/{pet_id}/visits/new").status_code == 404
+    rejected = client.post(f"/owners/2/pets/{pet_id}/visits/new", json=data, allow_redirects=False)
+    assert rejected.status_code == 404
+    created = client.post(url, json=data, allow_redirects=False)
     assert created.status_code in (301, 302, 303), created.text
-    assert created.headers['location'].endswith('/owners/2')
+    assert created.headers['location'].endswith('/owners/1')
     assert "Interval follow-up &lt;check&gt;" in client.get("/owners/1").text
     search = "/visits/search?fromDate=2031-02-03&toDate=2031-02-03&maxDurationMinutes=45&maxFollowUpMonths=15"
     reloaded = client.get(search).json()
