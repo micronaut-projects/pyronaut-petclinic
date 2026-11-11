@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "_id": {
+      "type": "integer"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    },
+    "pets": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "birthDate": {
+            "format": "date",
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "visits": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "date": {
+                  "format": "date",
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "date",
+                "description"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "birthDate",
+          "id",
+          "name",
+          "visits"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "telephone": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "_id",
+    "address",
+    "city",
+    "firstName",
+    "lastName",
+    "pets"
+  ],
+  "title": "OwnerCareSummary",
+  "type": "object"
+}

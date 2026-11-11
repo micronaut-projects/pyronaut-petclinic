@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from jakarta.inject import Singleton
 from micronaut.context.annotation import Mapper
 from petclinic.dtos.patients import OwnerForm, PetForm, VisitForm
+from petclinic.dtos.care_summary import OwnerCareSummary, OwnerCareSummaryPet, OwnerCareSummaryPetVisit
 from petclinic.models.patients import Owner, Pet, PetType, Visit
 
 
@@ -73,3 +74,24 @@ class FormMapper(ABC):
     @abstractmethod
     def to_visit(self, form: VisitForm, pet: Pet) -> Visit:
         ...
+
+    @Mapper.Mapping(from_='#{this.to_care_summary_pets(owner)}', to='pets')
+    @abstractmethod
+    def to_owner_care_summary(self, owner: Owner) -> OwnerCareSummary:
+        ...
+
+    @Mapper.Mapping(from_='#{this.to_care_summary_visits(pet)}', to='visits')
+    @abstractmethod
+    def to_care_summary_pet(self, pet: Pet) -> OwnerCareSummaryPet:
+        ...
+
+    @Mapper
+    @abstractmethod
+    def to_care_summary_visit(self, visit: Visit) -> OwnerCareSummaryPetVisit:
+        ...
+
+    def to_care_summary_pets(self, owner: Owner) -> list[OwnerCareSummaryPet]:
+        return [self.to_care_summary_pet(pet) for pet in owner.pets]
+
+    def to_care_summary_visits(self, pet: Pet) -> list[OwnerCareSummaryPetVisit]:
+        return [self.to_care_summary_visit(visit) for visit in pet.visits]

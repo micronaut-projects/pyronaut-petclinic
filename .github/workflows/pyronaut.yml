@@ -34,5 +34,8 @@ jobs:
       - name: Install project dependencies
         run: pyronaut install --progress off
 
+      - name: Check generated care summary DTOs
+        run: python3 scripts/generate_care_summary.py --check
+
       - name: Run PetClinic tests
         run: pyronaut test

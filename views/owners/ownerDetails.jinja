@@ -71,6 +71,9 @@
                                 <i class="fas fa-plus me-2"></i>{{ msg["button.addPet"]|e }}
                             </a>
                         </div>
+                        <a id="export-care-summary" href="/owners/{{ owner.id|e }}/care-summary" class="btn btn-outline-primary w-100 mt-3">
+                            <i class="fas fa-download me-2"></i>{{ msg['owner.exportCareSummary']|e }}
+                        </a>
                     </div>
                 </div>
             </div>
