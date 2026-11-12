@@ -4,7 +4,9 @@ from typing import Annotated
 
 from jakarta.inject import Inject
 from jakarta.validation import Validator
-from micronaut.http import HttpResponse, MediaType
+from micronaut.http import HttpRequest, HttpResponse, HttpStatus, MediaType
+from micronaut.http.exceptions import HttpStatusException
+from micronaut.http.server.util.locale import HttpLocaleResolver
 from micronaut.http.annotation import Body, Get, Post, QueryValue
 from micronaut.http.server.exceptions import NotFoundException
 from micronaut.views import View
@@ -13,11 +15,15 @@ from petclinic.dtos.patients import OwnerForm
 from petclinic.errors import entity_not_found
 from petclinic.mapper import FormMapper
 from petclinic.services.clinic import ClinicService
+from petclinic.services.loyalty import OwnerLoyaltyService
+from petclinic.services.loyalty_views import loyalty_view_model
 from petclinic.services.view_models import owner_search_model, owner_view_model
 
 clinic_service: Annotated[ClinicService, Inject]
 form_mapper: Annotated[FormMapper, Inject]
 validator: Annotated[Validator, Inject]
+loyalty_service: Annotated[OwnerLoyaltyService, Inject]
+locales: Annotated[HttpLocaleResolver, Inject]
 
 
 @Get("/owners/find")
@@ -84,6 +90,15 @@ def process_owner_update_form(ownerId: int, form: Annotated[OwnerForm, Body]):
 
 @Get("/owners/{ownerId}")
 @View("owners/ownerDetails")
-def show_owner(ownerId: int) -> dict:
+def show_owner(ownerId: int, request: HttpRequest) -> dict:
     owner = page_owner(clinic_service, ownerId)
-    return {"owner": owner_view_model(owner)}
+    loyalty = None
+    if loyalty_service.is_enabled():
+        try:
+            summary = loyalty_service.summary(loyalty_service.find_owner_loyalty_account(owner))
+            language = str(locales.resolveOrDefault(request).toLanguageTag())
+            loyalty = loyalty_view_model(summary, language)
+        except HttpStatusException as error:
+            if error.getStatus() != HttpStatus.NOT_FOUND:
+                raise
+    return {"owner": owner_view_model(owner), "loyalty": loyalty}

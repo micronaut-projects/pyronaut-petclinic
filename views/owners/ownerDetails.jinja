@@ -76,6 +76,37 @@
                         </a>
                     </div>
                 </div>
+                {% if loyalty != none %}
+                    <section id="owner-loyalty-card" class="card mt-4 animate-fade-in-up"
+                             data-owner-id="{{ owner.id|e }}" data-reward-cost="{{ loyalty.rewardCost|e }}" data-locale="{{ locale|replace('_', '-')|e }}"
+                             data-success-label="{{ msg['loyalty.success']|e }}" data-insufficient-label="{{ msg['loyalty.insufficientPoints']|e }}"
+                             data-error-label="{{ msg['loyalty.requestFailed']|e }}" data-owner-not-found-label="{{ msg['loyalty.ownerNotFound']|e }}">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-star me-2"></i>{{ msg['loyalty.title']|e }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>{{ msg['loyalty.balance']|e }}</span>
+                                <strong><span id="loyalty-balance">{{ loyalty.points|e }}</span> {{ msg['loyalty.points']|e }}</strong>
+                            </div>
+                            <p class="text-muted mb-3">{{ msg['loyalty.earnRate']|replace('{0}', loyalty.pointsPerVisit)|e }}</p>
+                            <button id="loyalty-redeem" type="button" class="btn btn-primary w-100"{% if loyalty.points < loyalty.rewardCost %} disabled{% endif %}>
+                                {{ msg['loyalty.redeem']|replace('{0}', loyalty.rewardCost)|e }}
+                            </button>
+                            <div id="loyalty-status" class="alert mt-3 mb-0" role="status" aria-live="polite" hidden></div>
+                            <h6 class="mt-4">{{ msg['loyalty.recentVouchers']|e }}</h6>
+                            <ul id="loyalty-vouchers" class="list-group list-group-flush">
+                                {% for voucher in loyalty.recentVouchers %}
+                                    <li class="list-group-item px-0 d-flex justify-content-between gap-3">
+                                        <span data-voucher-reference>{{ voucher.reference|e }}</span>
+                                        <time data-voucher-date datetime="{{ voucher.createdAt|e }}">{{ voucher.displayDate|e }}</time>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            <p id="loyalty-vouchers-empty" class="text-muted mb-0"{% if loyalty.recentVouchers %} hidden{% endif %}>{{ msg['loyalty.noVouchers']|e }}</p>
+                        </div>
+                    </section>
+                {% endif %}
             </div>
             <div class="col-lg-8">
                 <div class="card animate-fade-in-up stagger-1">
@@ -325,4 +356,7 @@
             </script>
         {% endif %}
     </main>
+    {% if loyalty != none %}
+        <script type="module" src="/resources/js/owner-loyalty.js"></script>
+    {% endif %}
 {% endblock %}
