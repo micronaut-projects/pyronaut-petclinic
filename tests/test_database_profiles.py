@@ -25,7 +25,7 @@ def test_database_profile_and_oracle_feature_gates(client, application_context):
         connection.close()
     if DATABASE != 'oracle':
         for path in ('/visits', '/visits/search?fromDate=2026-01-01&toDate=2026-12-31',
-                     '/knowledge', '/owners/1/care-record', '/oracle/transaction-priority'):
+                     '/knowledge', '/owners/1/care-record', '/oracle/transaction-priority', '/owners/1/loyalty'):
             assert client.get(path).status_code == 404, path
         for name in ('PetCareKnowledgeService', 'OwnerCareViewService', 'OracleTransactionPriorityService'):
             assert not application_context.java_ctx.containsBean(java.type('petclinic.services.' + name))
@@ -83,8 +83,19 @@ def test_dialect_selects_beans_independently_of_profile(
                 ('services', 'PetCareKnowledgeService'),
                 ('services', 'OwnerCareViewService'),
                 ('services', 'OracleTransactionPriorityService'),
+                ('services', 'OracleOwnerLoyaltyService'),
+                ('controllers', 'OwnerLoyaltyController'),
                 ('controllers', 'OwnerCareRecordController')):
             assert context.containsBean(java.type('petclinic.' + layer + '.' + name)) == (dialect == DIALECT_ORACLE), name
     finally:
         context.close()
         environment.stop()
+
+
+def test_loyalty_implementation_follows_the_database_profile(client, application_context):
+    import java
+    service = application_context.java_ctx.getBean(java.type('petclinic.services.OwnerLoyaltyService'))
+    assert service.is_enabled() == (DATABASE == 'oracle')
+    if DATABASE != 'oracle':
+        assert 'id="owner-loyalty-card"' not in client.get('/owners/1').text
+        assert client.post('/owners/1/loyalty/redemptions').status_code == 404
