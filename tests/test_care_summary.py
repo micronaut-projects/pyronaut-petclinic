@@ -34,7 +34,8 @@ def test_care_summary_preserves_empty_collections_and_optional_telephone(client,
     owner = patients.owner(telephone=None)
     no_pets = client.get(f'/owners/{owner.id}/care-summary')
     assert no_pets.status_code == 200, no_pets.text
-    assert no_pets.json()['pets'] == [] and no_pets.json().get('telephone') is None
+    assert no_pets.json()['pets'] == []
+    assert 'telephone' not in no_pets.json()
     pet = patients.pet(owner)
     no_visits = client.get(f'/owners/{owner.id}/care-summary')
     assert no_visits.status_code == 200, no_visits.text
