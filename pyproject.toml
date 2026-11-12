@@ -44,7 +44,7 @@ additional-modules = ['jdbc-oracle-free', 'jdbc-postgresql', 'jdbc-mysql']
 suppressions = ['test-resources.containers.oracle.copy-to-container']
 
 [tool.pyronaut.dependencies]
-boms = ['io.micronaut.data:micronaut-data-bom:5.2.3']
+boms = ['io.micronaut.data:micronaut-data-bom:5.2.4']
 runtime = [
   'io.micronaut:micronaut-http-server-netty',
   'io.micronaut:micronaut-management',
