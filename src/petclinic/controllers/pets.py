@@ -48,6 +48,7 @@ def process_pet_creation_form(ownerId: int, form: Annotated[PetForm, Body]):
         raise
     pet_type = pet_type_for(form, errors, clinic_service)
     if errors:
+        form.id = None
         return HttpResponse.badRequest(ModelAndView("pets/createOrUpdatePetForm", {"pet": form, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True,
                 "validationErrors": errors}))
     if pet_type is None:
@@ -77,12 +78,12 @@ def process_pet_update_form(ownerId: int, petId: int, form: Annotated[PetForm, B
         if errors:
             return HttpResponse.notFound(ModelAndView('error/404', {'path': f'/owners/{ownerId}/pets/{petId}/edit', 'message': 'Entity not found.'}))
         raise
-    pet = clinic_service.find_pet_by_id(petId)
     pet_type = pet_type_for(form, errors, clinic_service)
     if errors:
         form.id = petId
         return HttpResponse.badRequest(ModelAndView("pets/createOrUpdatePetForm", {"pet": form, "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False,
                 "validationErrors": errors}))
+    pet = clinic_service.find_pet_by_id(petId)
     if pet_type is None:
         return HttpResponse.badRequest("Invalid pet type")
     form.birthDateValue = parse_form_date(form.birthDate)
