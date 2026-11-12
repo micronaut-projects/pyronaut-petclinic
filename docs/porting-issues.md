@@ -1,14 +1,14 @@
 # PetClinic port: open issues and retained workarounds
 
-Updated: 2026-10-28 (ownership triage and SDK follow-up). Scope: a faithful Micronaut PetClinic port to Pyronaut.
+Updated: 2026-11-12 (local reference delta and SDK 0.1.2 verification). Scope: a faithful Micronaut PetClinic port to Pyronaut.
 
 This is a working log for filing issues later. No external issues have been created. It retains open issues, framework improvements, unresolved investigations and active workarounds. Local environment/provisioning issues and fully resolved entries needing no workaround are excluded. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
 
-**Latest scope:** check the updated local Java reference, organize repositories/services/controllers/models/DTOs by functionality, verify SDK 0.1.1 compatibility, isolate datasource profiles, and select database beans by datasource dialect. The earlier stabilization backlog remains deferred except for the corrections recorded below.
+**Latest scope:** port the local reference through `cce864d`: care-summary export, Oracle loyalty reservations and updated lookup/form/visit contracts. Preserve functionality packages, dialect-based bean selection and retained workarounds. SDK 0.1.2 is used for the current verification; earlier findings retain their original versions until individually reproduced.
 
 ## Reproduction versions and configuration
 
-The original findings used the versions below. The latest checkpoint records the SDK 0.1.1 verification separately.
+The original findings used the versions below. The checkpoints below record later SDK verification separately.
 
 - Pyronaut SDK `0.0.3`; Micronaut Core `5.2.2`; SDK platform `5.1.0`.
 - Micronaut Data runtime/processor `5.2.3`; Micronaut Serialization `3.1.0`.
@@ -52,7 +52,7 @@ Counts assign each PORT identifier once. Mixed entries have separately named par
 | PORT-026 | Framework improvement | **Foreign-exception documentation.** Explicit Java exception catches work where Python `Exception` does not. Document the hierarchy; the expected ORA-00054 lock result is not a persistence failure. |
 | PORT-027 | Framework candidate | **Configuration schema mismatch (027b).** The SDK schema rejects the working runtime list-of-maps shape. Retain the narrow validation suppression and investigate schema generation/config metadata ownership. |
 | PORT-028 | Application/test | **Separate-process resource configuration.** The Test Resources server does not automatically share the application's classpath. Host-path copying works. SDK resource resolution/docs could improve; no promised application-classpath visibility is established. |
-| PORT-031 | Reference application | **Source ownership policy.** Cross-owner paths/reassignment are reference behavior. Preserve the requested parity; any stricter policy is a separate product/reference decision, not a Pyronaut fix. |
+| PORT-031 | Reference application | **Remaining pet ownership policy.** Current visit routes reject owner/pet mismatches and the port now matches. Cross-owner pet editing/reassignment remains source behavior; do not change that policy silently. |
 | PORT-032 | Reference application | **Source error handlers/rendering.** Wrong parameter lookup and creation/edit context are Java sample defects. Reconfirm against the current reference before filing; unsupported content-type status behavior may require a separate Core reproduction. |
 | PORT-035 | Framework candidate | **Pyronaut generic bridge generation.** Nested repository inheritance emits signatures that clash or fail to override. The Java structure compiles; retain the verified direct-CRUD workaround and reduce generated signatures. |
 | PORT-038 | Reference application | **Source decimal DDL.** Scale-zero H2 `DECIMAL` loses fractions as declared. The reference schema/mapping needs a fix; ours explicitly preserves scale. A Data schema-generation claim needs an annotation-contract reproduction first. |
@@ -242,12 +242,12 @@ For each candidate, record the installed versions above, original failure, small
 - **Workaround (verified):** Copy `config/oracle/01-priority.sql` using a host path when running the SDK from the project root. Both priority HTTP checks pass with automatic setup and no diagnostic override. The script remains bundled as a resource. The [image entrypoint source](https://raw.githubusercontent.com/gvenzl/oci-oracle-free/main/container-entrypoint.sh) documents the initialization-script execution path.
 - **Issue disposition:** Separate-process resource configuration adaptation; resource staging/documentation could improve. The SQL file exists and application-side resource loading is verified separately, but this does not establish a contract that the Test Resources server shares the application's classpath.
 
-### PORT-031 — Reference pet/visit operations do not enforce owner-path membership
+### PORT-031 — Reference pet editing still permits cross-owner paths
 
-- **Observed:** In the running Java reference, GET `/owners/2/pets/1/edit` and `/owners/2/pets/1/visits/new` return 200 and display pet 1 with its actual owner. A valid JSON visit POST and valid pet edit POST through owner 2 both return 301 to `/owners/2`; restoring the pet through owner 1 returns 301 to `/owners/1`. The source resolves the pet independently of `ownerId`; pet edit POST assigns the URL's owner, and visit POST saves against the selected pet and redirects to the URL's owner.
-- **Impact:** The added membership checks in the initial port change the requested clean copy's behavior. This is also a reference application concern if stronger parent ownership semantics are desired later.
-- **Resolution:** Remove the port-only rejection checks and preserve reference lookup/reassignment behavior. The interval check verifies a mismatched-owner visit POST, its redirect, the actual owning pet's updated history, and both mismatched-owner GET pages. A separate runtime check of pet reassignment in the port remains part of the broader contract audit.
-- **Issue disposition:** Reference behavior, not an SDK defect. Do not silently introduce additional authorization/ownership policy into this port.
+- **Historical observation:** The earlier running Java reference accepted cross-owner pet edit and visit paths. Its valid pet edit POST assigned the URL's owner, while visit creation used the selected pet. These were reference behavior rather than SDK defects.
+- **Current source (`cce864d`, 2026-11-11):** Visit GET/POST now compare the pet's owner with the path and return 404 on mismatch. Those corrections are ported and covered by shared tests. That resolved visit portion is no longer an open issue.
+- **Remaining behavior:** Pet edit GET still loads the pet independently of `ownerId`; valid pet edit POST maps the URL's owner onto that pet. A stronger pet-reassignment policy remains a reference/product decision. Preserve parity unless that policy changes upstream.
+- **Issue disposition:** Reference application policy; no Pyronaut defect established. A separate runtime check of successful cross-owner pet reassignment remains part of the broader contract audit.
 
 ### PORT-032 — Running reference has core validation/error response defects
 
@@ -256,7 +256,8 @@ For each candidate, record the installed versions above, original failure, small
 - **Reproduction B:** POST URL-encoded empty owner fields to `/owners/1/edit`. Response is 500 HTML containing the creation form action `/owners/new`. The source's shared validation handler unconditionally sets `isNew=true`.
 - **Reproduction C:** POST a valid URL-encoded visit body to the JSON-only visit route. The running reference returns 500 HTML; its error log contains `AuthorizationException`. This does not imply that form-encoded visit creation is supported.
 - **Control:** A valid pet form with nonexistent `typeId=999999` returns 400 and body `Invalid pet type`; this is distinct from a constraint-validation failure.
-- **Disposition:** Reference application defects and framework response behavior. Report separately from Pyronaut candidates. The port's remaining validation-status/body comparison is explicitly open; successful workflows and captured successful JSON contracts do not prove these failure paths match.
+- **2026-11-11 source audit:** The new pet-specific handler now uses route variables, preserves edit context and returns HTML 400; those changes are ported and tested. The separate owner handler still sets `isNew=true`, and the visit handler still reads IDs from query parameters. The older runtime observations above have not been rerun against the new Java build, so reconfirm them before filing.
+- **Disposition:** Remaining reference application defects and framework response behavior. Report separately from Pyronaut candidates. The port's remaining validation-status/body comparison is explicitly open; successful workflows and captured successful JSON contracts do not prove these failure paths match.
 
 ### PORT-035 — Dialect repository subclasses lose inherited CRUD generic signatures
 
@@ -286,6 +287,7 @@ For each candidate, record the installed versions above, original failure, small
 ### PORT-040 — JUnit suite summary reports zero skips despite skipped cases
 
 - **Observed on SDK 0.1.1:** The H2 CLI reports 101 passed / 20 skipped. Its XML contains 121 test cases and twenty `<skipped>` elements, but the suite attribute is `skipped="0"`.
+- **Reconfirmed on SDK 0.1.2 (2026-11-12):** The complete H2 report has 173 child cases, including 57 skipped children, while its suite still declares `skipped="0"`. The CLI reports the correct 116 passed / 57 skipped. Count the child elements when auditing profile coverage.
 - **Evidence:** `__pyronaut__/reports/refactor-20261028/final/h2/junit.xml`; the individual skipped elements identify the Oracle-only cases.
 - **Impact:** Tools relying on suite-level skip counts can report misleading coverage totals. This does not establish Oracle feature coverage on H2.
 - **Workaround:** Count actual child results and use the CLI summary when reporting profile coverage.
@@ -392,7 +394,28 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 - **Application workaround:** `OraclePriorityConnectionCleanup` registers a connection callback only for LOW Oracle-priority transactions. After Micronaut completes transaction cleanup and before the connection returns to Hikari, it retires that one physical connection. HIGH and ordinary transactions retain pooling. This deliberately spends a new connection on each LOW demo attempt; it preserves real Oracle rollback exceptions and does not fabricate a UI outcome or retry the losing write. Remove the workaround only after the repeated JDBC and HTTP reproductions pass with session reuse on corrected Oracle/driver versions.
 - **Evidence:** Original live responses, Oracle trace, repeated raw JDBC source/output and failing HTTP reports are retained locally under `__pyronaut__/reports/priority-overlap-20261028/before/`. The existing demo appointments were left unchanged; temporary live diagnostic rows were removed.
 
-## Latest verification checkpoint
+## Latest verification checkpoint (2026-11-12)
+
+The existing local Java reference advanced from `f0e444e` to `cce864d`. Its application delta is ported: strict owner/pet lookups, pet-form HTML 400 responses with preserved path/form identity, visit owner-path checks, schema-generated care-summary downloads, and Oracle reservable loyalty balances with atomic voucher redemption. The separate functionality packages and dialect-property conditions remain in use.
+
+The four complete profile runs collected **173 child cases each**, with zero failures/errors. They used Pyronaut **0.1.2**, Core **5.2.22**, platform **5.2.5**, Data runtime/processor **5.2.4**, Serialization **3.2.6**, Validation **5.2.1**, Test Resources client **4.3.1**, Oracle JDBC **23.26.3.0.0** and matching GraalPy **25.4.4.1.1**. Data is aligned with the current Java reference platform; the remaining build/runtime tooling follows the installed SDK.
+
+| Profile | Passed | Expected skips |
+| --- | ---: | ---: |
+| H2 | 116 | 57 |
+| Oracle | 172 | 1 |
+| PostgreSQL | 115 | 58 |
+| MySQL | 115 | 58 |
+
+Counts come from the child XML cases, including `<skipped>` elements, rather than treating skipped features as passes. Configuration validation remains enabled with the existing PORT-027 suppression. Cached database images were reused. Reports, CLI output, counts and tested source hashes are local/ignored under `__pyronaut__/reports/micronaut-updates-20261111/final/`.
+
+Shared tests exercise nested export fields/dates, required empty arrays, omitted null telephone values, download headers and missing owners; invalid pet forms preserve route identity despite conflicting query/form IDs, retain submitted values, and do not persist edits. Visit creation rejects owner/pet path mismatches. Oracle adds provisioning without historical credit, edit/delete credit rules, first-visit provisioning, credit/provisioning rollback, voucher-insert failure rollback, 64-bit reservation deltas, committed-only balance visibility, concurrent visits/redemptions, independent reservation completion/release, recent-voucher ordering and localization. Priority tests retain the real 15-second pause, repeat emergency displacement three times, and check persisted state after both requests finish.
+
+The care-summary schema is unchanged from the reference. A deterministic Python generator replaces the Java record-generation step, and CI checks its committed output. The loyalty JavaScript is copied unchanged from the reference; syntax, HTTP delivery and matching localized DOM attributes are checked. Python persistence association fields remain nullable for partially hydrated ORM graphs; business queries explicitly fetch the required pet/owner relations before strict ID helpers or DTO mapping use them. Java `Optional` scalar projections are explicitly unwrapped. These adaptations are not new proven framework defects.
+
+The reference's optional Oracle schema-discovery task generates unused Java records; it is not adopted into the Python build. Java build-plugin/wrapper/native-build changes and its migration guide are also not copied into the SDK-managed application. Interactive browser clicks, packaged/native execution, remote CI and rerunning the current Java error-handler failures remain outside this checkpoint. The earlier open investigations and active workarounds remain until their own reduced controls establish a fix. PORT-031 now retains only the remaining pet-edit ownership policy; the source's visit-path correction is ported and tested. The pet-specific part of PORT-032 is corrected while its separate owner/visit-handler investigations remain open.
+
+## Previous verification checkpoint (2026-10-28)
 
 The final **2026-10-28** runs collected 133 cases per profile, with zero failures/errors. They used Pyronaut **0.1.1**, Core **5.2.19**, Data **5.2.3**, Serialization **3.2.5**, Validation **5.2.1**, Test Resources client **4.3.1** and matching GraalPy **25.4.4.1.1**. After the priority-session cleanup, all four profiles were rerun. Oracle uses the default 15-second reservation pause and repeats the displacement race three times. The latest reports, CLI logs and source-content manifest are retained locally under `__pyronaut__/reports/priority-overlap-20261028/final/`; preceding dialect and package checks remain under `__pyronaut__/reports/dialect-selection-20261028/final/`, `__pyronaut__/reports/models-dtos-20261028/final/` and `__pyronaut__/reports/refactor-20261028/`.
 

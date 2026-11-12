@@ -14,15 +14,21 @@ The default test profile is Oracle. Each invocation has one application/database
 | Functionality | Modules |
 | --- | --- |
 | Startup, fixtures and management | `test_application.py`, `test_fixtures.py`, `test_management.py` |
-| Owners and facade persistence | `test_owners.py`, `test_owner_repository.py`, `test_services.py` |
+| Owners, pet forms and facade persistence | `test_owners.py`, `test_pet_forms.py`, `test_owner_repository.py`, `test_services.py` |
 | Vet listing/cache, CRUD, specialities and forms | `test_vets.py`, `test_vet_crud.py`, `test_vet_specialities.py`, `test_vet_forms.py` |
 | Assignment/row ETag algorithms | `test_etag_functions.py` |
 | Clinics, source HTTP contracts, catalogs and geometry | `test_clinics.py`, `test_clinic_reference_contracts.py`, `test_clinic_catalog.py`, `test_geometry.py` |
 | Visits and interval repositories | `test_visits.py`, `test_visit_repository.py` |
 | Resources, embeddings and Oracle retrieval | `test_embeddings.py`, `test_knowledge.py` |
 | JSON duality care records | `test_care_records.py` |
+| Schema-generated care-summary export | `test_care_summary.py` |
+| Oracle loyalty lifecycle, redemption and reservations | `test_loyalty_lifecycle.py`, `test_loyalty_redemptions.py`, `test_loyalty_reservations.py` |
 | Appointment persistence and Oracle priority | `test_appointment_repository.py`, `test_priority.py` |
 | Errors, locale and dialect gating | `test_exception_handling.py`, `test_locale.py`, `test_database_profiles.py` |
+
+Disposable patient fixtures live in `patient_test_support.py`. Oracle loyalty helpers live in `loyalty_test_support.py`; they use generated repository operations inside real transactions and independent JDBC/Java HTTP connections for overlapping requests. Tests check 64-bit points, committed balance visibility, overspending prevention, reservation release, atomic visit credit/provisioning and voucher failure rollback, recent-voucher ordering and localized labels.
+
+Run `python3 scripts/generate_care_summary.py --check` to verify that the committed response DTOs match the JSON Schema. Care-summary HTTP tests cover nested data, dates, empty arrays, null omission, download headers and missing owners on every profile.
 
 Priority overlap checks repeat three times using the real 15-second reservation pause and assert the final persisted emergency booking after both responses, covering reuse after an earlier rollback (PORT-054).
 
@@ -30,7 +36,7 @@ Oracle-only modules declare `pytest.mark.skipif` explicitly. Ordinary visit crea
 
 The HTTP fixture is non-transactional so requests use their real service transactions. The direct locking regression opens an explicit write transaction, matching the Java source test's transaction boundary. Java enum mirrors are compared by their normalized names. A Java HTTP client is used for blank `If-Match` values because the SDK requests client rejects them before sending.
 
-Pytest uses Python stream capture (`--capture=sys`, configured in `pyproject.toml`) because the updated embedded runner fails with default file-descriptor capture. Care-record children retain their field constraints and are validated explicitly; nested collection `Valid` annotations generate invalid Java on SDK 0.1.1. The HTTP fixture explicitly selects every database profile, including H2, because the SDK fixture builder misses the application context configurer. See PORT-018/051/053 in the issue log.
+Pytest uses Python stream capture (`--capture=sys`, configured in `pyproject.toml`) because the updated embedded runner fails with default file-descriptor capture. Care-record children retain their field constraints and are validated explicitly; nested collection `Valid` annotations generate invalid Java on SDK 0.1.1; that compatibility workaround remains in this port. The HTTP fixture explicitly selects every database profile, including H2, because the SDK fixture builder misses the application context configurer. See PORT-018/051/053 in the issue log.
 
 Java mirrors live under their layer packages: `petclinic.repositories`, `petclinic.services`, `petclinic.models` and `petclinic.dtos`. Python imports use the owning functionality module. The database regression checks the actual database product and JDBC URL with the selected database profile. Separate bean-selection checks verify the default H2 fallback without a database profile, configure dialects through flat, nested and environment-style properties under custom profiles, and verify that a conflicting profile name does not override the dialect or enable Oracle-only features.
 

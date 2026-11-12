@@ -16,6 +16,8 @@ The [porting issue log](docs/porting-issues.md) records encountered problems, re
 - Caffeine caching on `ClinicService.find_all_vets`; the newer CRUD service reads fresh state.
 - Oracle vector retrieval using the reference's static 384-dimensional embedding catalog.
 - Owner care JSON duality documents with nested updates and Oracle ETAG conflict handling.
+- Schema-generated JSON care-summary downloads on every database.
+- Oracle loyalty points using generated lock-free reservations, atomic voucher redemption and localized owner cards.
 - Oracle priority transactions where an emergency HIGH booking displaces a regular LOW booking.
 - English, Spanish and German message bundles with persistent locale selection.
 - Micronaut validation annotations on Python form objects.
@@ -28,7 +30,7 @@ The [porting issue log](docs/porting-issues.md) records encountered problems, re
 
 ## Requirements
 
-- Pyronaut SDK installed and on `PATH`. The current application was verified with SDK `0.1.1`.
+- Pyronaut SDK installed and on `PATH`. The current application was verified with SDK `0.1.2`.
 - Docker or a compatible container runtime for external database Test Resources; H2 runs in memory.
 - Java/GraalVM requirements as expected by the installed Pyronaut SDK.
 
@@ -45,6 +47,7 @@ type = 'jvm'
 config/          Micronaut application configuration
 src/             Python application code
 src-java/        H2 ETag adapter, datasource bootstrap and Oracle priority session cleanup
+scripts/         JSON Schema DTO generation and freshness check
 static/          Static web assets
 tests/           Pytest test suite
 tests-config/    Test-specific Micronaut configuration
@@ -57,7 +60,7 @@ Application layers under `src/petclinic/` are split into packages:
 
 | Package | Contents |
 | --- | --- |
-| `repositories/` | Contracts and dialect implementations grouped by owners, pets, visits, vets, clinics, appointments, care records and knowledge |
+| `repositories/` | Contracts and dialect implementations grouped by owners, pets, visits, vets, clinics, appointments, care records, loyalty and knowledge |
 | `services/` | Shared clinic facade, feature services, embeddings, startup loading and presentation helpers |
 | `controllers/` | Routes grouped by functionality, shared form helpers and global error handlers |
 | `models/` | Domain entities, appointment enums, persistence projections and Oracle document/vector models |
@@ -76,7 +79,7 @@ pyronaut setup
 pyronaut install
 ```
 
-`pyronaut install` resolves JVM dependencies and creates a matching GraalPy `.venv` with pytest when no project environment exists. An existing environment must be compatible with the installed SDK.
+`pyronaut install` resolves JVM dependencies and creates a matching GraalPy `.venv` with pytest when no project environment exists. An existing environment must be compatible with the installed SDK. Micronaut Data is pinned to `5.2.4`, matching the current Java reference platform; the SDK manages the remaining toolchain versions.
 
 ## Run
 
@@ -94,7 +97,7 @@ Shared `application.toml` contains no datasource settings. H2 connection and mig
 
 `pyronaut dev` starts Test Resources for development. `pyronaut run` launches the processed application without starting Test Resources; external database profiles need an existing database and its connection settings. The default H2 configuration remains in memory. `pyronaut run dev` passes `dev` as an application argument rather than selecting development mode.
 
-The visits search, knowledge, priority and care-record routes below are enabled when `datasources.default.dialect` is `ORACLE`, normally selected through the `oracle` profile. Ordinary visit creation and history are shared by all profiles.
+The visits search, knowledge, priority, care-record and loyalty routes below are enabled when `datasources.default.dialect` is `ORACLE`, normally selected through the `oracle` profile. Ordinary visit creation and history are shared by all profiles.
 
 Useful routes:
 
@@ -109,6 +112,8 @@ Useful routes:
 - `http://localhost:8080/knowledge` — Oracle only
 - `http://localhost:8080/oracle/transaction-priority` — Oracle only
 - `http://localhost:8080/owners/1/care-record` — Oracle only
+- `http://localhost:8080/owners/1/care-summary` — JSON download on every profile
+- `http://localhost:8080/owners/1/loyalty` — Oracle-only balance and recent vouchers
 - `http://localhost:8080/control-panel` — development mode
 - `http://localhost:8080/health`
 - `http://localhost:8080/info`
@@ -127,7 +132,7 @@ PETCLINIC_TEST_DATABASE=postgres pyronaut test
 PETCLINIC_TEST_DATABASE=mysql pyronaut test
 ```
 
-Tests are split by functionality under `tests/`, with shared fixtures in `conftest.py`. Shared cases cover core workflows, current vet/speciality CRUD and ETags, Unicode boundaries, JSON/HTML errors, health/info, spatial queries and geometry writes, catalogs, localization, resources and cache behavior. Oracle adds interval comparisons, vector ranking/thresholds, duality updates and competing priority transactions. Oracle-only cases declare their requirement at the module level; the H2GIS connection regression runs only on H2. See the [test guide](tests/README.md).
+Tests are split by functionality under `tests/`, with shared fixtures in `conftest.py`. Shared cases cover core workflows, current vet/speciality CRUD and ETags, Unicode boundaries, JSON/HTML errors, health/info, spatial queries and geometry writes, catalogs, localization, resources and cache behavior. Shared cases also cover care-summary structure and pet-form validation. Oracle adds interval comparisons, vector ranking/thresholds, duality updates, competing priority transactions, and loyalty credit/redemption concurrency and rollback. Oracle-only cases declare their requirement at the module level; the H2GIS connection regression runs only on H2. See the [test guide](tests/README.md).
 
 These commands run SDK configuration validation. A single documented suppression covers the SDK schema's incorrect shape for Oracle Test Resources file-copy settings; actual container initialization is verified by the Oracle tests.
 
@@ -155,6 +160,27 @@ The migrations provide visit intervals, 20 clinic branches, 62 service offerings
 Run SDK commands from the project root so Test Resources can copy the Oracle priority setup script from `config/oracle/01-priority.sql`. The booking pause defaults to 15 seconds, matching the reference. LOW demo transactions retire their physical connection after cleanup to avoid a reproduced Oracle/JDBC session-reuse failure; the repeated-booking regression and workaround are documented as PORT-054 in the issue log.
 
 The clinic map loads Leaflet and drawing controls from a CDN. Coordinate-based search remains available when those assets cannot load.
+
+## Care Summary Export
+
+`GET /owners/{ownerId}/care-summary` downloads `owner-<id>-care-summary.json`, including the owner's pets and visit history. Missing owners return JSON 404. Required pet/visit arrays remain present when empty; null optional telephone values are omitted.
+
+The DTOs are generated from `config/jsonschema/owner-care-summary.schema.json` and mapped with Micronaut `@Mapper`. After changing that schema, regenerate and check the committed Python DTOs:
+
+```bash
+python3 scripts/generate_care_summary.py
+python3 scripts/generate_care_summary.py --check
+```
+
+CI checks that generated DTOs are current. This replaces the reference's Java record generation for this response. The reference's optional Oracle schema-discovery build task produces unused Java records and has no Pyronaut equivalent here.
+
+## Oracle Loyalty Rewards
+
+With the Oracle dialect, each newly saved owner gets a zero-point account. Each newly inserted visit earns 25 points in the same transaction; editing or deleting visits does not add or reverse points. Startup reconciliation creates zero-point accounts for existing owners without crediting historical visits or replacing balances. Reconciliation follows `petclinic.sample-data.enabled` (true by default).
+
+The owner details card shows the balance and ten newest vouchers in the selected language. `GET /owners/{ownerId}/loyalty` returns that summary. `POST /owners/{ownerId}/loyalty/redemptions` needs no body and spends 100 points for one `PET_CARE_REWARD` voucher. Success returns 201 with the committed balance and a `PCR-` voucher reference; insufficient points return localized JSON 409 with code `INSUFFICIENT_LOYALTY_POINTS`. Missing owners/accounts return 404. Reading an owner or summary never creates an account; the first new visit can provision a missing account.
+
+Oracle's reservable points column enforces a nonnegative balance. Generated increment/decrement repository methods perform reservations; the debit and voucher insert run in a separate `REQUIRES_NEW` transaction, and the response reads the balance after commit. There are no application balance locks or read-modify-write updates. Other dialects use a no-op loyalty service and expose neither the card nor loyalty endpoints.
 
 ## Template Rendering
 
