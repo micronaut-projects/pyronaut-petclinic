@@ -1,0 +1,11 @@
+[datasources.default]
+db-type = 'postgres'
+driver-class-name = 'org.postgresql.Driver'
+dialect = 'POSTGRES'
+
+[flyway.datasources.default]
+locations = ['classpath:db/postgres']
+
+[test-resources.containers.postgres]
+image-name = 'postgis/postgis'
+image-tag = '18-3.6-alpine'

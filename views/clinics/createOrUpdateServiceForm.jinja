@@ -1,0 +1,151 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas {{ ("fa-plus" if isNew else "fa-pen")|e }} me-3"></i>{{ (msg["clinic.servicesNew"] if isNew else msg["clinic.servicesEdit"])|e }}</h1>
+            <p>{{ clinic.name|e }} · {{ clinic.city|e }}</p>
+        </div>
+    </div>
+
+    <main class="container flex-grow-1 py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <a href="/clinics/{{ clinic.id|e }}/services" class="btn btn-secondary mb-4">
+                    <i class="fas fa-arrow-left me-2"></i>{{ msg["button.back"]|e }}
+                </a>
+
+                <div class="form-container animate-fade-in-up">
+                    <div class="alert alert-info">
+                        <i class="fas fa-circle-info me-2"></i>{{ msg["clinic.servicesFormHelp"]|e }}
+                    </div>
+
+                    {% if validationErrors != none and not (not validationErrors) %}
+                        <div class="alert alert-danger" role="alert">{{ msg["validation.fixErrors"]|e }}</div>
+                    {% endif %}
+
+                    <form id="clinic-service-form"
+                          action="/clinics/{{ clinic.id|e }}/services"
+                          data-catalog-url="/clinics/{{ clinic.id|e }}/services"
+                          data-submit-failed-message="{{ msg["clinic.servicesSaveFailed"]|e }}"
+                          novalidate>
+                        <div id="submit-error" class="alert alert-danger d-none" role="alert"></div>
+
+                        <div class="mb-4">
+                            <label for="serviceCode" class="form-label"><i class="fas fa-key me-2 text-primary"></i>{{ msg["clinic.servicesCode"]|e }}</label>
+                            <input type="text" class="form-control {{ ("is-invalid" if validationErrors["serviceCode"] else "")|e }}" id="serviceCode" name="serviceCode"
+                                   value="{{ (service.serviceCode if service.serviceCode != none else "")|e }}" pattern="[A-Z][A-Z0-9_]*" maxlength="40" required>
+                            <div class="form-text">{{ msg["clinic.servicesCodeHelp"]|e }}</div>
+                            {% if validationErrors["serviceCode"] %}
+                                <div class="invalid-feedback">{{ validationErrors["serviceCode"]|e }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="name" class="form-label"><i class="fas fa-tag me-2 text-primary"></i>{{ msg["clinic.servicesName"]|e }}</label>
+                            <input type="text" class="form-control {{ ("is-invalid" if validationErrors["name"] else "")|e }}" id="name" name="name"
+                                   value="{{ (service.name if service.name != none else "")|e }}" maxlength="100" required>
+                            {% if validationErrors["name"] %}
+                                <div class="invalid-feedback">{{ validationErrors["name"]|e }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label"><i class="fas fa-align-left me-2 text-primary"></i>{{ msg["clinic.servicesDescription"]|e }}</label>
+                            <textarea class="form-control {{ ("is-invalid" if validationErrors["description"] else "")|e }}" id="description" name="description" maxlength="500" rows="3">{{ (service.description if service.description != none else "")|e }}</textarea>
+                            {% if validationErrors["description"] %}
+                                <div class="invalid-feedback">{{ validationErrors["description"]|e }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="price" class="form-label"><i class="fas fa-dollar-sign me-2 text-primary"></i>{{ msg["clinic.servicesPrice"]|e }}</label>
+                                <input type="number" class="form-control {{ ("is-invalid" if validationErrors["price"] else "")|e }}" id="price" name="price"
+                                       value="{{ (service.price if service.price != none else "")|e }}" min="0" step="0.01" required>
+                                {% if validationErrors["price"] %}
+                                    <div class="invalid-feedback">{{ validationErrors["price"]|e }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="durationMinutes" class="form-label"><i class="fas fa-clock me-2 text-primary"></i>{{ msg["clinic.servicesDuration"]|e }}</label>
+                                <input type="number" class="form-control {{ ("is-invalid" if validationErrors["durationMinutes"] else "")|e }}" id="durationMinutes" name="durationMinutes"
+                                       value="{{ (service.durationMinutes if service.durationMinutes != none else "")|e }}" min="1" max="480" required>
+                                {% if validationErrors["durationMinutes"] %}
+                                    <div class="invalid-feedback">{{ validationErrors["durationMinutes"]|e }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                                <i class="fas fa-save me-2"></i>{{ msg["clinic.servicesSave"]|e }}
+                            </button>
+                            <a href="/clinics/{{ clinic.id|e }}/services" class="btn btn-secondary btn-lg">{{ msg["button.cancel"]|e }}</a>
+                        </div>
+                    </form>
+
+                    <script>
+                        (() => {
+                            const form = document.getElementById('clinic-service-form');
+                            const submitError = document.getElementById('submit-error');
+
+                            form.addEventListener('submit', async (event) => {
+                                event.preventDefault();
+                                form.classList.add('was-validated');
+
+                                if (!form.checkValidity()) {
+                                    return;
+                                }
+
+                                const formData = new FormData(form);
+                                const payload = {
+                                    serviceCode: formData.get('serviceCode'),
+                                    name: formData.get('name'),
+                                    description: formData.get('description'),
+                                    price: Number(formData.get('price')),
+                                    durationMinutes: Number(formData.get('durationMinutes'))
+                                };
+
+                                submitError.classList.add('d-none');
+
+                                try {
+                                    const response = await fetch(form.action, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json'
+                                        },
+                                        body: JSON.stringify(payload)
+                                    });
+
+                                    if (!response.ok) {
+                                        let message = form.dataset.submitFailedMessage;
+                                        try {
+                                            const errorBody = await response.json();
+                                            message = errorBody.message || errorBody.error || message;
+                                            if (errorBody.errors) {
+                                                message += ' ' + Object.values(errorBody.errors).join(' ');
+                                            }
+                                        } catch (ignored) {
+                                            // Keep the localized fallback for non-JSON server errors.
+                                        }
+                                        submitError.textContent = message;
+                                        submitError.classList.remove('d-none');
+                                        return;
+                                    }
+
+                                    await response.json();
+                                    window.location.assign(form.dataset.catalogUrl);
+                                } catch (error) {
+                                    submitError.textContent = form.dataset.submitFailedMessage;
+                                    submitError.classList.remove('d-none');
+                                }
+                            });
+                        })();
+                    </script>
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock %}

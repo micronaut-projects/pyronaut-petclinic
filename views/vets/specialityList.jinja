@@ -1,0 +1,48 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-list me-3"></i>{{ msg["speciality.title"]|e }}</h1>
+            <p>{{ msg["speciality.description"]|e }}</p>
+        </div>
+    </div>
+    <main class="container flex-grow-1 py-4">
+        {% if created %}
+            <div class="alert alert-success" role="status">{{ msg["speciality.created"]|e }}</div>
+        {% endif %}
+        {% if changed %}
+            <div class="alert alert-success" role="status">{{ msg["speciality.changed"]|e }}</div>
+        {% endif %}
+        <div class="d-flex gap-2 flex-wrap mb-4">
+            <a href="/vets/specialities/new" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>{{ msg["speciality.add"]|e }}
+            </a>
+            <a href="/vets" class="btn btn-outline-secondary">{{ msg["vet.backToVets"]|e }}</a>
+        </div>
+        {% if (not specialities) %}
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-list"></i></div>
+                <h2>{{ msg["speciality.empty"]|e }}</h2>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th scope="col">{{ msg["speciality.name"]|e }}</th><th scope="col">{{ msg["speciality.action"]|e }}</th></tr></thead>
+                        <tbody>
+                            {% for speciality in specialities %}
+                                <tr>
+                                    <td>{{ speciality.name|e }}</td>
+                                    <td><a class="btn btn-sm btn-outline-primary" href="/vets/specialities/{{ speciality.id|e }}/edit">
+                                        <i class="fas fa-pen me-1"></i>{{ msg["button.edit"]|e }}
+                                    </a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    </main>
+{% endblock %}

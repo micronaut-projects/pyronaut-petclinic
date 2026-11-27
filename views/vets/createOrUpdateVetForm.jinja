@@ -1,0 +1,87 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-user-md me-3"></i>{{ (msg["vet.add"] if isNew else msg["vet.edit"])|e }}</h1>
+            <p>{{ msg["vet.formHelp"]|e }}</p>
+        </div>
+    </div>
+    <main class="container flex-grow-1 py-4">
+        {% if saved %}
+            <div class="alert alert-success" role="status">{{ msg["vet.saved"]|e }}</div>
+        {% endif %}
+        <div id="vet-feedback" class="alert" role="status" aria-live="polite" hidden
+             data-saved="{{ msg["vet.saved"]|e }}"
+             data-conflict="{{ msg["vet.conflictPending"]|e }}"
+             data-missing-etag="{{ msg["vet.reloadRequired"]|e }}"
+             data-error="{{ msg["vet.requestFailed"]|e }}"
+             data-network-error="{{ msg["vet.networkError"]|e }}">
+            <span id="vet-feedback-message"></span>
+            {% if not isNew %}
+                <a id="vet-reload" class="alert-link ms-2" href="/vets/{{ vetForm.id|e }}/edit" hidden>{{ msg["vet.reload"]|e }}</a>
+            {% endif %}
+        </div>
+        <section class="card">
+            <div class="card-body">
+                <form id="vet-edit-form" method="post" action="{{ ("/vets" if isNew else "/vets/" ~ vetForm.id)|e }}" data-is-new="{{ 'true' if isNew else 'false'|e }}">
+                    {% if not isNew %}
+                        <input type="hidden" name="id" value="{{ vetForm.id|e }}">
+                        <input type="hidden" name="etag" value="{{ vetForm.etag|e }}">
+                    {% endif %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="vet-first-name" class="form-label">{{ msg["vet.firstName"]|e }}</label>
+                            <input id="vet-first-name" name="firstName" class="form-control" maxlength="255" required
+                                   value="{{ (vetForm.firstName if vetForm.firstName != none else "")|e }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vet-last-name" class="form-label">{{ msg["vet.lastName"]|e }}</label>
+                            <input id="vet-last-name" name="lastName" class="form-control" maxlength="255" required
+                                   value="{{ (vetForm.lastName if vetForm.lastName != none else "")|e }}">
+                        </div>
+                        <div class="col-12">
+                            <fieldset>
+                                <legend class="form-label">{{ msg["vet.specialities"]|e }}</legend>
+                                {% if (not specialities) %}
+                                    <p class="text-muted">{{ msg["speciality.noneAvailable"]|e }}</p>
+                                {% else %}
+                                    {% for speciality in specialities %}
+                                        <div class="form-check form-check-inline">
+                                            {% if speciality.id in vetForm.specialityIds %}
+                                                <input id="vet-speciality-{{ speciality.id|e }}" name="specialityIds"
+                                                       class="form-check-input" type="checkbox" value="{{ speciality.id|e }}" checked>
+                                            {% else %}
+                                                <input id="vet-speciality-{{ speciality.id|e }}" name="specialityIds"
+                                                       class="form-check-input" type="checkbox" value="{{ speciality.id|e }}">
+                                            {% endif %}
+                                            <label class="form-check-label" for="vet-speciality-{{ speciality.id|e }}">
+                                                {{ speciality.name|e }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </fieldset>
+                        </div>
+                        <div class="col-12 d-flex gap-2 flex-wrap">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-floppy-disk me-1"></i>{{ msg["button.save"]|e }}
+                            </button>
+                            <a href="/vets" class="btn btn-outline-secondary">{{ msg["button.cancel"]|e }}</a>
+                        </div>
+                    </div>
+                </form>
+                {% if not isNew %}
+                    <form id="vet-delete-form" method="post" action="/vets/{{ vetForm.id|e }}" class="mt-4 pt-3 border-top"
+                          data-confirm="{{ msg["vet.confirmDelete"]|e }}">
+                        <input type="hidden" name="etag" value="{{ vetForm.etag|e }}">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="fas fa-trash me-1"></i>{{ msg["vet.delete"]|e }}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+    <script src="/resources/js/vet-form.js" defer></script>
+{% endblock %}

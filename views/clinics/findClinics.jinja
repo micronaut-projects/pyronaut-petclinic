@@ -1,0 +1,1379 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+
+    <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+    <link href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.3/dist/leaflet-geoman.css" rel="stylesheet">
+    <style>
+        .clinic-map {
+            height: 420px;
+            min-height: 420px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .manual-polygon-point-number,
+        .manual-line-point-number {
+            align-self: stretch;
+            display: flex;
+            align-items: center;
+            padding-top: 1.4rem;
+        }
+
+        .clinic-map-instructions {
+            color: #6c757d;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            margin-top: 0.5rem;
+        }
+
+        .clinic-search-result-marker {
+            background: transparent;
+            border: 0;
+        }
+
+        .clinic-search-result-marker span {
+            align-items: center;
+            background: #dc3545;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 5px rgb(0 0 0 / 45%);
+            color: #fff;
+            display: flex;
+            height: 32px;
+            justify-content: center;
+            width: 32px;
+        }
+    </style>
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-location-dot me-3"></i>{{ msg["clinic.findNearby"]|e }}</h1>
+            <p>{{ msg["clinic.spatialIntro"]|e }}</p>
+        </div>
+    </div>
+
+    <main class="container flex-grow-1 py-4">
+        <div class="search-box mb-4 animate-fade-in-up">
+            <form action="/clinics" method="get" id="clinic-search-form" novalidate>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label for="mode" class="form-label">
+                            <i class="fas fa-compass me-2"></i>{{ msg["clinic.searchMode"]|e }}
+                        </label>
+                        <select class="form-select form-select-lg" id="mode" name="mode">
+                            <option value="near" selected>{{ msg["clinic.mode.near"]|e }}</option>
+                            <option value="within">{{ msg["clinic.mode.within"]|e }}</option>
+                            <option value="intersects">{{ msg["clinic.mode.intersects"]|e }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">
+                            <i class="fas fa-sliders me-2"></i>{{ msg["clinic.filters"]|e }}
+                        </label>
+                        <div class="d-flex flex-wrap gap-4 pt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acceptingNewPatients"
+                                       name="acceptingNewPatients">
+                                <label class="form-check-label" for="acceptingNewPatients">
+                                    {{ msg["clinic.acceptingNewPatients"]|e }}
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="emergencyService"
+                                       name="emergencyService">
+                                <label class="form-check-label" for="emergencyService">
+                                    {{ msg["clinic.emergencyService"]|e }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="nav nav-tabs mb-3" id="clinic-search-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="map-search-tab" type="button" role="tab"
+                                data-bs-toggle="tab" data-bs-target="#map-search-panel"
+                                aria-controls="map-search-panel" aria-selected="true">
+                            <i class="fas fa-map me-2"></i>{{ msg["clinic.searchTab.map"]|e }}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="manual-search-tab" type="button" role="tab"
+                                data-bs-toggle="tab" data-bs-target="#manual-search-panel"
+                                aria-controls="manual-search-panel" aria-selected="false">
+                            <i class="fas fa-keyboard me-2"></i>{{ msg["clinic.searchTab.manual"]|e }}
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade" id="manual-search-panel" role="tabpanel"
+                         aria-labelledby="manual-search-tab">
+                        <div class="row g-3">
+                            <div class="col-md-4 clinic-field clinic-field-near">
+                                <label for="latitude" class="form-label">
+                                    <i class="fas fa-map-pin me-2"></i>{{ msg["clinic.latitude"]|e }}
+                                </label>
+                                <input type="number" step="0.0001" class="form-control form-control-lg" id="latitude"
+                                       name="latitude">
+                            </div>
+                            <div class="col-md-4 clinic-field clinic-field-near">
+                                <label for="longitude" class="form-label">
+                                    <i class="fas fa-map-pin me-2"></i>{{ msg["clinic.longitude"]|e }}
+                                </label>
+                                <input type="number" step="0.0001" class="form-control form-control-lg" id="longitude"
+                                       name="longitude">
+                            </div>
+                            <div class="col-md-4 clinic-field clinic-field-near">
+                                <label for="radiusMeters" class="form-label">
+                                    <i class="fas fa-ruler-combined me-2"></i>{{ msg["clinic.radiusMeters"]|e }}
+                                </label>
+                                <input type="number" step="100" min="100" class="form-control form-control-lg" id="radiusMeters"
+                                       name="radiusMeters">
+                            </div>
+                            <div class="col-12 clinic-field clinic-field-manual-polygon">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <label class="form-label mb-0">{{ msg["clinic.polygonPoints"]|e }}</label>
+                                        <div class="form-text">{{ msg["clinic.manualPolygonHelp"]|e }}</div>
+                                    </div>
+                                    <button class="btn btn-outline-primary" id="clinic-add-polygon-point" type="button">
+                                        <i class="fas fa-plus me-2"></i>{{ msg["clinic.addPoint"]|e }}
+                                    </button>
+                                </div>
+                                <div class="row g-3" id="clinic-manual-polygon-points"
+                                     data-latitude-label="{{ msg["clinic.latitude"]|e }}"
+                                     data-longitude-label="{{ msg["clinic.longitude"]|e }}"
+                                     data-point-label="{{ msg["clinic.polygonPoint"]|e }}">
+                                </div>
+                                <div class="invalid-feedback d-block d-none" id="clinic-manual-polygon-validation">
+                                    {{ msg["clinic.manualPolygonRequired"]|e }}
+                                </div>
+                            </div>
+                            <div class="col-12 clinic-field clinic-field-manual-line">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <label class="form-label mb-0">{{ msg["clinic.linePoints"]|e }}</label>
+                                        <div class="form-text">{{ msg["clinic.manualLineHelp"]|e }}</div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-secondary" id="clinic-example-line" type="button">
+                                            <i class="fas fa-route me-2"></i>{{ msg["clinic.exampleLine"]|e }}
+                                        </button>
+                                        <button class="btn btn-outline-primary" id="clinic-add-line-point" type="button">
+                                            <i class="fas fa-plus me-2"></i>{{ msg["clinic.addPoint"]|e }}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="row g-3" id="clinic-manual-line-points"
+                                     data-latitude-label="{{ msg["clinic.latitude"]|e }}"
+                                     data-longitude-label="{{ msg["clinic.longitude"]|e }}"
+                                     data-point-label="{{ msg["clinic.linePoint"]|e }}">
+                                </div>
+                                <div class="invalid-feedback d-block d-none" id="clinic-manual-line-validation">
+                                    {{ msg["clinic.manualLineRequired"]|e }}
+                                </div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end gap-2">
+                                <button class="btn btn-secondary btn-lg w-50 clinic-reset-search" type="button">
+                                    <i class="fas fa-rotate-left me-2"></i>{{ msg["clinic.reset"]|e }}
+                                </button>
+                                <button class="btn btn-primary btn-lg w-50" type="submit">
+                                    <i class="fas fa-search me-2"></i>{{ msg["button.search"]|e }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade show active" id="map-search-panel" role="tabpanel" aria-labelledby="map-search-tab">
+                        <div id="clinic-map" class="clinic-map"></div>
+                        <div class="clinic-map-instructions" id="clinic-map-instructions" role="status"
+                             data-near-instruction="{{ msg["clinic.mapInstruction.near"]|e }}"
+                             data-within-instruction="{{ msg["clinic.mapInstruction.within"]|e }}"
+                             data-intersects-instruction="{{ msg["clinic.mapInstruction.intersects"]|e }}"
+                             data-near-required="{{ msg["clinic.mapValidation.nearRequired"]|e }}"
+                             data-outside-bounds="{{ msg["clinic.mapValidation.outsideBounds"]|e }}"
+                             data-within-required="{{ msg["clinic.mapValidation.withinRequired"]|e }}"
+                             data-within-self-intersection="{{ msg["clinic.mapValidation.withinSelfIntersection"]|e }}"
+                             data-within-self-intersection-move="{{ msg["clinic.mapValidation.withinSelfIntersectionMove"]|e }}"
+                             data-intersects-required="{{ msg["clinic.mapValidation.intersectsRequired"]|e }}">
+                            {{ msg["clinic.mapInstruction.near"]|e }}
+                        </div>
+                        <div class="mt-3 d-flex justify-content-end gap-2">
+                            <button class="btn btn-outline-secondary btn-lg d-none" type="button"
+                                    id="clinic-map-example-line">
+                                <i class="fas fa-route me-2"></i>{{ msg["clinic.exampleLine"]|e }}
+                            </button>
+                            <button class="btn btn-secondary btn-lg clinic-reset-search" type="button">
+                                <i class="fas fa-rotate-left me-2"></i>{{ msg["clinic.reset"]|e }}
+                            </button>
+                            <button class="btn btn-primary btn-lg" type="submit">
+                                <i class="fas fa-search me-2"></i>{{ msg["button.search"]|e }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <section id="clinic-results-section" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1" id="clinic-results-title"
+                        data-template="{{ (msg["clinic.resultsTitle"]|replace("{0}", "__mode__"))|e }}">{{ (msg["clinic.resultsTitle"]|replace("{0}", msg["clinic.mode.near"]))|e }}</h2>
+                    <p class="text-muted mb-0" id="clinic-results-count"
+                       data-template="{{ (msg["clinic.resultsCount"]|replace("{0}", "__count__"))|e }}">{{ (msg["clinic.resultsCount"]|replace("{0}", 0))|e }}</p>
+                </div>
+            </div>
+
+            <div id="clinic-results"
+                 data-empty-title="{{ msg["clinic.noClinicsFound"]|e }}"
+                 data-empty-message="{{ msg["clinic.noClinicsMessage"]|e }}"
+                 data-coordinates-label="{{ msg["clinic.coordinates"]|e }}"
+                 data-accepting-label="{{ msg["clinic.acceptingNewPatients"]|e }}"
+                 data-emergency-label="{{ msg["clinic.emergencyService"]|e }}"
+                 data-yes-label="{{ msg["clinic.status.yes"]|e }}"
+                 data-no-label="{{ msg["clinic.status.no"]|e }}"
+                 data-remove-point-label="{{ msg["clinic.removePoint"]|e }}"
+                 data-drag-to-resize-radius-title="{{ msg["clinic.dragToResizeRadius"]|e }}"
+                 data-drag-to-move-point-title="{{ msg["clinic.dragToMovePoint"]|e }}"
+                 data-search-result-title="{{ (msg["clinic.searchResult"]|replace("{0}", "__clinic__"))|e }}"
+                 data-search-failed="{{ msg["clinic.searchFailed"]|e }}"
+                 data-map-attribution="{{ msg["clinic.mapAttribution"]|e }}"
+                 data-map-language="{{ (locale[:2] if locale != none else "en")|e }}">
+            </div>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.3/dist/leaflet-geoman.min.js"></script>
+    <script>
+        (function () {
+            const form = document.getElementById('clinic-search-form');
+            const modeSelect = document.getElementById('mode');
+            const mapTab = document.getElementById('map-search-tab');
+            const manualTab = document.getElementById('manual-search-tab');
+            const mapPanel = document.getElementById('map-search-panel');
+            const mapContainer = document.getElementById('clinic-map');
+            const mapInstructions = document.getElementById('clinic-map-instructions');
+            const exampleLineButton = document.getElementById('clinic-example-line');
+            const mapExampleLineButton = document.getElementById('clinic-map-example-line');
+            const results = document.getElementById('clinic-results');
+            const resultsSection = document.getElementById('clinic-results-section');
+            const resultsTitle = document.getElementById('clinic-results-title');
+            const resultsCount = document.getElementById('clinic-results-count');
+            const manualPolygonPoints = document.getElementById('clinic-manual-polygon-points');
+            const addPolygonPointButton = document.getElementById('clinic-add-polygon-point');
+            const manualPolygonValidation = document.getElementById('clinic-manual-polygon-validation');
+            const manualLinePoints = document.getElementById('clinic-manual-line-points');
+            const addLinePointButton = document.getElementById('clinic-add-line-point');
+            const manualLineValidation = document.getElementById('clinic-manual-line-validation');
+            if (!form || !modeSelect || !results || !resultsSection || !resultsTitle || !resultsCount) {
+                return;
+            }
+
+            const nearFields = document.querySelectorAll('.clinic-field-near');
+            const manualPolygonFields = document.querySelectorAll('.clinic-field-manual-polygon');
+            const manualLineFields = document.querySelectorAll('.clinic-field-manual-line');
+            let mapBounds = [[42.88, -89.75], [43.27, -89.12]];
+            const exampleIntersectingLine = [
+                [43.0650, -89.5500],
+                [43.1100, -89.3300],
+                [43.1900, -89.2000]
+            ];
+            const defaultRadiusMeters = 5000;
+            let clinicMap = null;
+            let mapLimitZoom = null;
+            let referenceMarker = null;
+            let radiusCircle = null;
+            let radiusHandle = null;
+            let hasNearSelection = false;
+            let drawnLayer = null;
+            let drawnPoints = [];
+            let draftPointMarkers = null;
+            let resultMarkers = null;
+            let clinicSearchResultIcon = null;
+            let hasManualSelectionSinceModeChange = true;
+
+            function toggleGroup(fields, hidden) {
+                fields.forEach((field) => {
+                    field.classList.toggle('d-none', hidden);
+                    field.querySelectorAll('input').forEach((input) => {
+                        input.disabled = hidden;
+                    });
+                });
+            }
+
+            function applyMode(mode) {
+                const isNear = mode === 'near';
+                toggleGroup(nearFields, !isNear);
+                toggleGroup(manualPolygonFields, mode !== 'within');
+                toggleGroup(manualLineFields, mode !== 'intersects');
+                resetMapAndResults();
+                toggleExampleLineButtons(mode);
+                updateMapInstructions(mode);
+                applyMapMode(mode);
+            }
+
+            function fieldValue(name) {
+                return form.elements[name].value;
+            }
+
+            function setFieldValue(name, value) {
+                form.elements[name].value = value;
+            }
+
+            function availabilityFilters() {
+                return {
+                    acceptingNewPatients: form.elements.acceptingNewPatients.checked ? true : null,
+                    emergencyService: form.elements.emergencyService.checked ? true : null
+                };
+            }
+
+            function numberFieldValue(name) {
+                return Number(fieldValue(name));
+            }
+
+            function searchRequest(mode) {
+                if (mode === 'near') {
+                    return {
+                        url: '/clinics/nearby',
+                        options: {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                latitude: numberFieldValue('latitude'),
+                                longitude: numberFieldValue('longitude'),
+                                radiusMeters: numberFieldValue('radiusMeters'),
+                                acceptingNewPatients: availabilityFilters().acceptingNewPatients,
+                                emergencyService: availabilityFilters().emergencyService
+                            })
+                        }
+                    };
+                }
+                const coordinates = isMapTabActive() && drawnLayer
+                    ? drawnLayerCoordinates()
+                    : manualCoordinates(mode);
+                return {
+                    url: '/clinics/' + mode,
+                    options: {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(Object.assign({coordinates: coordinates}, availabilityFilters()))
+                    }
+                };
+            }
+
+            function manualCoordinates(mode) {
+                return manualPointCoordinates(mode === 'intersects' ? 'line' : 'polygon');
+            }
+
+            function manualPointEditor(type) {
+                return type === 'polygon'
+                    ? {container: manualPolygonPoints, validation: manualPolygonValidation}
+                    : {container: manualLinePoints, validation: manualLineValidation};
+            }
+
+            function addManualPoint(type, latitude, longitude) {
+                const editor = manualPointEditor(type);
+                if (!editor.container) {
+                    return;
+                }
+                const row = document.createElement('div');
+                row.className = 'col-12 clinic-manual-' + type + '-point';
+                const fields = document.createElement('div');
+                fields.className = 'row g-2 align-items-end';
+                const index = editor.container.children.length + 1;
+                const latitudeId = 'manual-' + type + '-latitude-' + index;
+                const longitudeId = 'manual-' + type + '-longitude-' + index;
+                fields.innerHTML = [
+                    '<div class="col-md-1 fw-semibold manual-' + type + '-point-number"></div>',
+                    '<div class="col-md-4"><label class="form-label" for="' + latitudeId + '"></label><input class="form-control" id="' + latitudeId + '" type="number" step="0.000001" data-' + type + '-latitude></div>',
+                    '<div class="col-md-4"><label class="form-label" for="' + longitudeId + '"></label><input class="form-control" id="' + longitudeId + '" type="number" step="0.000001" data-' + type + '-longitude></div>',
+                    '<div class="col-md-3"><button class="btn btn-outline-danger w-100" type="button" data-remove-' + type + '-point><i class="fas fa-trash me-2"></i>' + escapeHtml(results.dataset.removePointLabel) + '</button></div>'
+                ].join('');
+                fields.querySelector('[data-' + type + '-latitude]').value = latitude;
+                fields.querySelector('[data-' + type + '-longitude]').value = longitude;
+                fields.querySelector('[data-remove-' + type + '-point]').addEventListener('click', function () {
+                    row.remove();
+                    updateManualPointLabels(type);
+                    hasManualSelectionSinceModeChange = true;
+                });
+                row.append(fields);
+                editor.container.append(row);
+                updateManualPointLabels(type);
+            }
+
+            function updateManualPointLabels(type) {
+                const editor = manualPointEditor(type);
+                if (!editor.container) {
+                    return;
+                }
+                Array.from(editor.container.children).forEach(function (row, index) {
+                    row.querySelector('.manual-' + type + '-point-number').textContent =
+                        editor.container.dataset.pointLabel + ' ' + (index + 1);
+                    row.querySelector('[data-' + type + '-latitude]').previousElementSibling.textContent =
+                        editor.container.dataset.latitudeLabel;
+                    row.querySelector('[data-' + type + '-longitude]').previousElementSibling.textContent =
+                        editor.container.dataset.longitudeLabel;
+                });
+            }
+
+            function manualPointCoordinates(type) {
+                const editor = manualPointEditor(type);
+                if (!editor.container) {
+                    return [];
+                }
+                return Array.from(editor.container.children).map(function (row) {
+                    return {
+                        latitude: Number(row.querySelector('[data-' + type + '-latitude]').value),
+                        longitude: Number(row.querySelector('[data-' + type + '-longitude]').value)
+                    };
+                });
+            }
+
+            function manualPointValidationMessage(type, minimumPoints) {
+                const editor = manualPointEditor(type);
+                return manualCoordinateValidationMessage(
+                    editor.container, manualPointCoordinates(type), minimumPoints, editor.validation);
+            }
+
+            function manualCoordinateValidationMessage(container, coordinates, minimumPoints, validationElement) {
+                const south = mapBounds[0][0];
+                const west = mapBounds[0][1];
+                const north = mapBounds[1][0];
+                const east = mapBounds[1][1];
+                const rows = container ? Array.from(container.children) : [];
+                let hasInvalidCoordinate = false;
+                coordinates.forEach(function (coordinate, index) {
+                    const isInvalid = !Number.isFinite(coordinate.latitude) || !Number.isFinite(coordinate.longitude) ||
+                        coordinate.latitude < south || coordinate.latitude > north ||
+                        coordinate.longitude < west || coordinate.longitude > east;
+                    hasInvalidCoordinate = hasInvalidCoordinate || isInvalid;
+                    const row = rows[index];
+                    if (row) {
+                        row.querySelectorAll('input').forEach(function (input) {
+                            input.classList.toggle('is-invalid', isInvalid);
+                        });
+                    }
+                });
+                return coordinates.length < minimumPoints || hasInvalidCoordinate
+                    ? validationElement.textContent
+                    : null;
+            }
+
+            function coordinatesAreValid(coordinates, minimumPoints) {
+                return coordinates.length >= minimumPoints && coordinates.every(function (coordinate) {
+                    return Number.isFinite(coordinate.latitude) && Number.isFinite(coordinate.longitude) &&
+                        coordinate.latitude >= mapBounds[0][0] && coordinate.latitude <= mapBounds[1][0] &&
+                        coordinate.longitude >= mapBounds[0][1] && coordinate.longitude <= mapBounds[1][1];
+                });
+            }
+
+            function replaceManualPoints(type, points) {
+                const editor = manualPointEditor(type);
+                if (!editor.container) {
+                    return;
+                }
+                editor.container.replaceChildren();
+                points.forEach(function (point) {
+                    addManualPoint(type, point.lat.toFixed(6), point.lng.toFixed(6));
+                });
+                editor.validation.classList.add('d-none');
+            }
+
+            function clearManualPoints(mode) {
+                if (mode === 'within') {
+                    replaceManualPoints('polygon', []);
+                } else if (mode === 'intersects') {
+                    replaceManualPoints('line', []);
+                }
+            }
+
+            function syncManualPointsFromMap(force) {
+                const mode = modeSelect.value;
+                const manualPoints = manualCoordinates(mode);
+                if (!force && manualPoints.length > 0 && !coordinatesAreValid(manualPoints, 1)) {
+                    return;
+                }
+                if (mode === 'within') {
+                    replaceManualPoints('polygon', drawnPoints);
+                } else if (mode === 'intersects') {
+                    replaceManualPoints('line', drawnPoints);
+                }
+            }
+
+            function syncMapFromManual() {
+                if (!clinicMap) {
+                    return;
+                }
+                const mode = modeSelect.value;
+                if (mode === 'near') {
+                    const latitude = numberFieldValue('latitude');
+                    const longitude = numberFieldValue('longitude');
+                    if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+                        setNearPoint({lat: latitude, lng: longitude});
+                    }
+                    return;
+                }
+                const coordinates = manualCoordinates(mode);
+                if (!coordinatesAreValid(coordinates, 1)) {
+                    return;
+                }
+                drawnPoints = coordinates.map(function (coordinate) {
+                    return L.latLng(coordinate.latitude, coordinate.longitude);
+                });
+                renderDraftPointMarkers();
+                renderDrawnLayerFromPoints();
+            }
+
+            function escapeHtml(value) {
+                return String(value).replace(/[&<>"']/g, function (character) {
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    }[character];
+                });
+            }
+
+            function selectedModeLabel() {
+                return modeSelect.options[modeSelect.selectedIndex].text;
+            }
+
+            function updateSummary(modeLabel, count) {
+                resultsTitle.textContent = resultsTitle.dataset.template.replace('__mode__', modeLabel);
+                resultsCount.textContent = resultsCount.dataset.template.replace('__count__', count);
+            }
+
+            function showResultsSection() {
+                resultsSection.classList.remove('d-none');
+            }
+
+            function hideResultsSection() {
+                resultsSection.classList.add('d-none');
+                results.innerHTML = '';
+                renderMapMarkers([]);
+                updateSummary(selectedModeLabel(), 0);
+            }
+
+            function renderEmptyState() {
+                showResultsSection();
+                renderMapMarkers([]);
+                results.innerHTML = [
+                    '<div class="empty-state" id="clinic-empty-state">',
+                    '<div class="empty-state-icon">',
+                    '<i class="fas fa-map-location"></i>',
+                    '</div>',
+                    '<h3>' + escapeHtml(results.dataset.emptyTitle) + '</h3>',
+                    '<p>' + escapeHtml(results.dataset.emptyMessage) + '</p>',
+                    '</div>'
+                ].join('');
+            }
+
+            function renderClinics(clinics, modeLabel) {
+                if (clinics.length === 0) {
+                    renderEmptyState();
+                    return;
+                }
+                showResultsSection();
+                results.innerHTML = '<div class="row g-4" id="clinic-results-list">' +
+                    clinics.map(function (clinic) {
+                        return [
+                            '<div class="col-md-6 col-lg-4">',
+                            '<div class="owner-card animate-fade-in-up">',
+                            '<div class="d-flex align-items-start mb-3">',
+                            '<div class="owner-avatar me-3">',
+                            '<i class="fas fa-hospital"></i>',
+                            '</div>',
+                            '<div class="flex-grow-1">',
+                            '<h5 class="mb-1">' + escapeHtml(clinic.name) + '</h5>',
+                            '<p class="text-muted mb-0 small">',
+                            '<i class="fas fa-city me-1"></i>' + escapeHtml(clinic.city),
+                            '</p>',
+                            '</div>',
+                            '</div>',
+                            '<div class="mb-3">',
+                            '<p class="mb-1 small text-muted">',
+                            '<i class="fas fa-home me-2"></i>' + escapeHtml(clinic.address),
+                            '</p>',
+                            '<p class="mb-0 small text-muted">',
+                            '<i class="fas fa-crosshairs me-2"></i>',
+                            escapeHtml(results.dataset.coordinatesLabel) + ': ' + escapeHtml(clinic.latitude) + ', ' + escapeHtml(clinic.longitude),
+                            '</p>',
+                            '<div class="d-flex flex-wrap gap-2 mb-3">',
+                            '<span class="badge ' + (clinic.acceptingNewPatients ? 'bg-success' : 'bg-secondary') + '">',
+                            escapeHtml(results.dataset.acceptingLabel) + ': ',
+                            escapeHtml(clinic.acceptingNewPatients ? results.dataset.yesLabel : results.dataset.noLabel),
+                            '</span>',
+                            '<span class="badge ' + (clinic.emergencyService ? 'bg-danger' : 'bg-secondary') + '">',
+                            escapeHtml(results.dataset.emergencyLabel) + ': ',
+                            escapeHtml(clinic.emergencyService ? results.dataset.yesLabel : results.dataset.noLabel),
+                            '</span>',
+                            '</div>',
+                            '</div>',
+                            '<span class="pet-badge">',
+                            '<i class="fas fa-circle-check"></i>',
+                            escapeHtml(modeLabel),
+                            '</span>',
+                            '<a href="/clinics/' + encodeURIComponent(clinic.id) + '/services" class="btn btn-outline-primary btn-sm w-100 mt-3">',
+                            '<i class="fas fa-hand-holding-medical me-2"></i>{{ msg["clinic.services"]|e }}',
+                            '</a>',
+                            '</div>',
+                            '</div>'
+                        ].join('');
+                    }).join('') +
+                    '</div>';
+                renderMapMarkers(clinics);
+            }
+
+            function isMapTabActive() {
+                return mapPanel && mapPanel.classList.contains('active');
+            }
+
+            function initializeMap() {
+                if (clinicMap || typeof L === 'undefined' || !mapContainer) {
+                    return;
+                }
+
+                clinicMap = L.map('clinic-map', {
+                    maxBounds: mapBounds,
+                    maxBoundsViscosity: 1.0,
+                    minZoom: 0
+                });
+                const selectableBounds = L.latLngBounds(mapBounds);
+                mapLimitZoom = clinicMap.getBoundsZoom(selectableBounds);
+                clinicMap.setMinZoom(mapLimitZoom);
+                clinicMap.fitBounds(selectableBounds, {animate: false});
+                mapBounds = latLngBoundsCoordinates(clinicMap.getBounds());
+                clinicMap.setMaxBounds(mapBounds);
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; ' + results.dataset.mapAttribution
+                }).addTo(clinicMap);
+                clinicSearchResultIcon = L.divIcon({
+                    className: 'clinic-search-result-marker',
+                    html: '<span><i class="fas fa-hospital"></i></span>',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -16]
+                });
+
+                resultMarkers = L.featureGroup().addTo(clinicMap);
+                draftPointMarkers = L.layerGroup().addTo(clinicMap);
+                referenceMarker = L.marker(clinicMap.getCenter(), {
+                    draggable: true
+                });
+                radiusCircle = L.circle(referenceMarker.getLatLng(), {
+                    radius: defaultRadiusMeters,
+                    color: '#0d6efd',
+                    fillColor: '#0d6efd',
+                    fillOpacity: 0.12
+                });
+                radiusHandle = L.marker(radiusHandleLatLng(), {
+                    draggable: true,
+                    title: results.dataset.dragToResizeRadiusTitle
+                });
+
+                if (clinicMap.pm) {
+                    clinicMap.pm.setLang(results.dataset.mapLanguage || 'en');
+                    clinicMap.on('pm:create', function (event) {
+                        setDrawnLayer(event.layer);
+                    });
+                }
+
+                referenceMarker.on('dragend', function () {
+                    if (!isWithinMapBounds(referenceMarker.getLatLng())) {
+                        referenceMarker.setLatLng(radiusCircle.getLatLng());
+                        showMapInstructionError(mapInstructionText('outsideBounds'));
+                        return;
+                    }
+                    setNearPoint(referenceMarker.getLatLng());
+                });
+                radiusHandle.on('drag', syncRadiusFromHandle);
+                radiusHandle.on('dragend', syncRadiusFromHandle);
+                clinicMap.on('click', function (event) {
+                    if (!isWithinMapBounds(event.latlng)) {
+                        showMapInstructionError(mapInstructionText('outsideBounds'));
+                        return;
+                    }
+                    if (modeSelect.value === 'near') {
+                        setNearPoint(event.latlng);
+                    } else {
+                        appendDrawPoint(event.latlng);
+                    }
+                });
+                clinicMap.on('moveend', constrainMapView);
+                clinicMap.on('zoomend', updateMapNavigation);
+                updateMapNavigation();
+
+                applyMapMode(modeSelect.value);
+                setTimeout(function () {
+                    clinicMap.invalidateSize();
+                }, 150);
+            }
+
+            function applyMapMode(mode) {
+                if (!clinicMap || !referenceMarker || !radiusCircle || !radiusHandle) {
+                    return;
+                }
+                const isNear = mode === 'near';
+                updateDrawControls(mode);
+                if (isNear) {
+                    if (hasNearSelection) {
+                        showNearSelection();
+                        updateRadiusHandle();
+                    } else {
+                        hideNearSelection();
+                    }
+                } else {
+                    hideNearSelection();
+                }
+            }
+
+            function updateDrawControls(mode) {
+                if (!clinicMap || !clinicMap.pm) {
+                    return;
+                }
+                if (typeof clinicMap.pm.removeControls === 'function') {
+                    clinicMap.pm.removeControls();
+                }
+                if (mode !== 'near' && typeof clinicMap.pm.addControls === 'function') {
+                    clinicMap.pm.addControls({
+                        position: 'topleft',
+                        drawPolygon: true,
+                        drawRectangle: true,
+                        drawMarker: false,
+                        drawCircle: false,
+                        drawCircleMarker: false,
+                        drawPolyline: mode === 'intersects',
+                        drawText: false,
+                        editMode: true,
+                        dragMode: true,
+                        removalMode: true,
+                        cutPolygon: false,
+                        rotateMode: false
+                    });
+                }
+                if (mode !== 'near' && typeof clinicMap.pm.setGlobalOptions === 'function') {
+                    clinicMap.pm.setGlobalOptions({
+                        allowSelfIntersection: false
+                    });
+                }
+            }
+
+            function setNearPoint(latlng) {
+                const normalized = clinicMap.wrapLatLng(L.latLng(latlng.lat, latlng.lng));
+                const radiusMeters = numberFieldValue('radiusMeters');
+                const selectedRadiusMeters = Number.isFinite(radiusMeters) && radiusMeters >= 100
+                    ? radiusMeters
+                    : defaultRadiusMeters;
+                hasNearSelection = true;
+                referenceMarker.setLatLng(normalized);
+                radiusCircle.setLatLng(normalized);
+                radiusCircle.setRadius(selectedRadiusMeters);
+                setFieldValue('latitude', normalized.lat.toFixed(4));
+                setFieldValue('longitude', normalized.lng.toFixed(4));
+                if (!Number.isFinite(radiusMeters) || radiusMeters < 100) {
+                    setFieldValue('radiusMeters', defaultRadiusMeters);
+                }
+                showNearSelection();
+                updateRadiusHandle();
+            }
+
+            function showNearSelection() {
+                if (!clinicMap.hasLayer(referenceMarker)) {
+                    referenceMarker.addTo(clinicMap);
+                }
+                if (!clinicMap.hasLayer(radiusCircle)) {
+                    radiusCircle.addTo(clinicMap);
+                }
+                if (!clinicMap.hasLayer(radiusHandle)) {
+                    radiusHandle.addTo(clinicMap);
+                }
+            }
+
+            function hideNearSelection() {
+                if (!clinicMap) {
+                    return;
+                }
+                if (referenceMarker && clinicMap.hasLayer(referenceMarker)) {
+                    clinicMap.removeLayer(referenceMarker);
+                }
+                if (radiusCircle && clinicMap.hasLayer(radiusCircle)) {
+                    clinicMap.removeLayer(radiusCircle);
+                }
+                if (radiusHandle && clinicMap.hasLayer(radiusHandle)) {
+                    clinicMap.removeLayer(radiusHandle);
+                }
+            }
+
+            function clearNearSelection() {
+                hasNearSelection = false;
+                hideNearSelection();
+            }
+
+            function radiusHandleLatLng() {
+                const center = referenceMarker.getLatLng();
+                const radiusMeters = numberFieldValue('radiusMeters') || defaultRadiusMeters;
+                const longitudeOffset = radiusMeters / (111320 * Math.cos(center.lat * Math.PI / 180));
+                return L.latLng(center.lat, center.lng + longitudeOffset);
+            }
+
+            function updateRadiusHandle() {
+                if (radiusHandle) {
+                    radiusHandle.setLatLng(radiusHandleLatLng());
+                }
+            }
+
+            function syncRadiusFromHandle() {
+                const radiusMeters = Math.max(100, Math.round(referenceMarker.getLatLng().distanceTo(radiusHandle.getLatLng())));
+                radiusCircle.setRadius(radiusMeters);
+                setFieldValue('radiusMeters', radiusMeters);
+            }
+
+            function setDrawnLayer(layer) {
+                const layerPoints = layerLatLngs(layer);
+                if (!layerPoints.every(isWithinMapBounds)) {
+                    if (clinicMap.hasLayer(layer)) {
+                        clinicMap.removeLayer(layer);
+                    }
+                    showMapInstructionError(mapInstructionText('outsideBounds'));
+                    return;
+                }
+                if (drawnLayer && clinicMap.hasLayer(drawnLayer)) {
+                    clinicMap.removeLayer(drawnLayer);
+                }
+                if (clinicMap.hasLayer(layer)) {
+                    clinicMap.removeLayer(layer);
+                }
+                drawnPoints = layerPoints;
+                renderDraftPointMarkers();
+                renderDrawnLayerFromPoints();
+            }
+
+            function syncDrawnLayer(refreshMarkers) {
+                if (!drawnLayer || !drawnLayer.getBounds) {
+                    return;
+                }
+                if (refreshMarkers !== false) {
+                    const layerPoints = layerLatLngs(drawnLayer);
+                    if (!layerPoints.every(isWithinMapBounds)) {
+                        renderDrawnLayerFromPoints();
+                        showMapInstructionError(mapInstructionText('outsideBounds'));
+                        return;
+                    }
+                    drawnPoints = layerPoints;
+                    renderDraftPointMarkers();
+                    syncManualPointsFromMap(true);
+                }
+            }
+
+            function appendDrawPoint(latlng) {
+                if (!isWithinMapBounds(latlng)) {
+                    showMapInstructionError(mapInstructionText('outsideBounds'));
+                    return;
+                }
+                if (drawnPoints.length === 0 && drawnLayer && clinicMap.hasLayer(drawnLayer)) {
+                    clinicMap.removeLayer(drawnLayer);
+                    drawnLayer = null;
+                }
+                const nextPoints = drawnPoints.concat([L.latLng(latlng.lat, latlng.lng)]);
+                if (modeSelect.value === 'within' && isSelfIntersectingPolygon(nextPoints)) {
+                    showMapInstructionError(mapInstructionText('withinSelfIntersection'));
+                    return;
+                }
+                drawnPoints = nextPoints;
+                renderDraftPointMarkers();
+                renderDrawnLayerFromPoints();
+            }
+
+            function renderDrawnLayerFromPoints() {
+                if (drawnLayer && clinicMap.hasLayer(drawnLayer)) {
+                    clinicMap.removeLayer(drawnLayer);
+                }
+                if (drawnPoints.length < 2) {
+                    drawnLayer = null;
+                    syncManualPointsFromMap(true);
+                    return;
+                }
+                if (modeSelect.value === 'within' && drawnPoints.length >= 3) {
+                    drawnLayer = L.polygon(drawnPoints, {
+                        color: '#198754',
+                        fillOpacity: 0.12
+                    });
+                } else {
+                    drawnLayer = L.polyline(linePointsForMode(), {
+                        color: modeSelect.value === 'intersects' ? '#dc3545' : '#198754',
+                        weight: 3
+                    });
+                }
+                drawnLayer.addTo(clinicMap);
+                enableDrawnLayerEditing();
+                syncDrawnLayer(false);
+                syncManualPointsFromMap(true);
+                updateDrawingValidation();
+            }
+
+            function enableDrawnLayerEditing() {
+                if (drawnLayer && drawnLayer.pm) {
+                    drawnLayer.pm.enable();
+                    drawnLayer.on('pm:edit', syncDrawnLayer);
+                    drawnLayer.on('pm:update', syncDrawnLayer);
+                }
+            }
+
+            function linePointsForMode() {
+                return drawnPoints;
+            }
+
+            function renderDraftPointMarkers() {
+                if (!draftPointMarkers) {
+                    return;
+                }
+                draftPointMarkers.clearLayers();
+                drawnPoints.forEach(function (point, index) {
+                    const marker = L.marker(point, {
+                        draggable: true,
+                        title: results.dataset.dragToMovePointTitle
+                    });
+                    marker.on('drag', function () {
+                        if (!isWithinMapBounds(marker.getLatLng())) {
+                            marker.setLatLng(drawnPoints[index]);
+                            showMapInstructionError(mapInstructionText('outsideBounds'));
+                            return;
+                        }
+                        drawnPoints[index] = marker.getLatLng();
+                        renderDrawnLayerFromPoints();
+                    });
+                    marker.on('dragend', function () {
+                        drawnPoints[index] = marker.getLatLng();
+                        renderDrawnLayerFromPoints();
+                        updateDrawingValidation();
+                    });
+                    marker.addTo(draftPointMarkers);
+                });
+            }
+
+            function clearDrawing() {
+                drawnPoints = [];
+                if (drawnLayer && clinicMap && clinicMap.hasLayer(drawnLayer)) {
+                    clinicMap.removeLayer(drawnLayer);
+                }
+                drawnLayer = null;
+                if (draftPointMarkers) {
+                    draftPointMarkers.clearLayers();
+                }
+            }
+
+            function isWithinMapBounds(point) {
+                return point.lat >= mapBounds[0][0] && point.lat <= mapBounds[1][0]
+                    && point.lng >= mapBounds[0][1] && point.lng <= mapBounds[1][1];
+            }
+
+            function latLngBoundsCoordinates(bounds) {
+                return [
+                    [bounds.getSouth(), bounds.getWest()],
+                    [bounds.getNorth(), bounds.getEast()]
+                ];
+            }
+
+            function constrainMapView() {
+                if (!clinicMap) {
+                    return;
+                }
+                const selectableBounds = L.latLngBounds(mapBounds);
+                if (!selectableBounds.contains(clinicMap.getBounds())) {
+                    clinicMap.panInsideBounds(selectableBounds, {animate: false});
+                }
+            }
+
+            function updateMapNavigation() {
+                if (!clinicMap || mapLimitZoom === null) {
+                    return;
+                }
+                if (clinicMap.getZoom() <= mapLimitZoom) {
+                    clinicMap.dragging.disable();
+                } else {
+                    clinicMap.dragging.enable();
+                    constrainMapView();
+                }
+            }
+
+            function resetMapAndResults() {
+                clearDrawing();
+                clearNearSelection();
+                hideResultsSection();
+                if (clinicMap) {
+                    clinicMap.fitBounds(L.latLngBounds(mapBounds), {animate: false});
+                }
+            }
+
+            function resetSearch() {
+                clearManualPoints('within');
+                clearManualPoints('intersects');
+                setFieldValue('latitude', '');
+                setFieldValue('longitude', '');
+                setFieldValue('radiusMeters', '');
+                form.elements.acceptingNewPatients.checked = false;
+                form.elements.emergencyService.checked = false;
+                hasManualSelectionSinceModeChange = false;
+                resetMapAndResults();
+            }
+
+            function useExampleIntersectingLine() {
+                replaceManualPoints('line', exampleIntersectingLine.map(function (point) {
+                    return {lat: point[0], lng: point[1]};
+                }));
+                hasManualSelectionSinceModeChange = true;
+                hideResultsSection();
+                if (isMapTabActive()) {
+                    drawnPoints = exampleIntersectingLine.map(function (point) {
+                        return L.latLng(point[0], point[1]);
+                    });
+                    renderDraftPointMarkers();
+                    renderDrawnLayerFromPoints();
+                    if (drawnLayer) {
+                        clinicMap.fitBounds(drawnLayer.getBounds().pad(0.3), {
+                            maxZoom: 13
+                        });
+                    }
+                }
+            }
+
+            function toggleExampleLineButtons(mode) {
+                if (mapExampleLineButton) {
+                    mapExampleLineButton.classList.toggle('d-none', mode !== 'intersects');
+                }
+            }
+
+            function layerLatLngs(layer) {
+                if (!layer || !layer.getLatLngs) {
+                    return [];
+                }
+                const latLngs = layer.getLatLngs();
+                if (latLngs.length > 0 && Array.isArray(latLngs[0])) {
+                    return normalizeLayerPoints(latLngs[0]);
+                }
+                return normalizeLayerPoints(latLngs);
+            }
+
+            function normalizeLayerPoints(points) {
+                return removeClosingPoint(points);
+            }
+
+            function removeClosingPoint(points) {
+                if (points.length < 2) {
+                    return points;
+                }
+                const first = points[0];
+                const last = points[points.length - 1];
+                if (first.lat === last.lat && first.lng === last.lng) {
+                    return points.slice(0, points.length - 1);
+                }
+                return points;
+            }
+
+            function drawnLayerCoordinates() {
+                if (!drawnLayer) {
+                    return [];
+                }
+                const points = modeSelect.value === 'intersects'
+                    ? linePointsForMode()
+                    : closedPointsForMode();
+                return points.map(function (point) {
+                    return {
+                        longitude: point.lng,
+                        latitude: point.lat
+                    };
+                });
+            }
+
+            function closedPointsForMode() {
+                if (drawnPoints.length >= 3) {
+                    return drawnPoints.concat([drawnPoints[0]]);
+                }
+                return drawnPoints;
+            }
+
+            function isSelfIntersectingPolygon(points) {
+                const shell = removeClosingPoint(points);
+                if (shell.length < 4) {
+                    return false;
+                }
+                for (let i = 0; i < shell.length; i++) {
+                    const firstStart = shell[i];
+                    const firstEnd = shell[(i + 1) % shell.length];
+                    for (let j = i + 1; j < shell.length; j++) {
+                        if (areAdjacentSegments(i, j, shell.length)) {
+                            continue;
+                        }
+                        const secondStart = shell[j];
+                        const secondEnd = shell[(j + 1) % shell.length];
+                        if (segmentsIntersect(firstStart, firstEnd, secondStart, secondEnd)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function areAdjacentSegments(firstIndex, secondIndex, segmentCount) {
+                return Math.abs(firstIndex - secondIndex) === 1
+                    || (firstIndex === 0 && secondIndex === segmentCount - 1);
+            }
+
+            function segmentsIntersect(firstStart, firstEnd, secondStart, secondEnd) {
+                const d1 = direction(firstStart, firstEnd, secondStart);
+                const d2 = direction(firstStart, firstEnd, secondEnd);
+                const d3 = direction(secondStart, secondEnd, firstStart);
+                const d4 = direction(secondStart, secondEnd, firstEnd);
+                if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0))
+                    && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+                    return true;
+                }
+                return d1 === 0 && isPointOnSegment(secondStart, firstStart, firstEnd)
+                    || d2 === 0 && isPointOnSegment(secondEnd, firstStart, firstEnd)
+                    || d3 === 0 && isPointOnSegment(firstStart, secondStart, secondEnd)
+                    || d4 === 0 && isPointOnSegment(firstEnd, secondStart, secondEnd);
+            }
+
+            function direction(start, end, point) {
+                return (end.lng - start.lng) * (point.lat - start.lat)
+                    - (end.lat - start.lat) * (point.lng - start.lng);
+            }
+
+            function isPointOnSegment(point, start, end) {
+                return point.lng >= Math.min(start.lng, end.lng)
+                    && point.lng <= Math.max(start.lng, end.lng)
+                    && point.lat >= Math.min(start.lat, end.lat)
+                    && point.lat <= Math.max(start.lat, end.lat);
+            }
+
+            function updateDrawingValidation() {
+                if (modeSelect.value === 'within' && isSelfIntersectingPolygon(drawnPoints)) {
+                    showMapInstructionError(mapInstructionText('withinSelfIntersectionMove'));
+                } else {
+                    updateMapInstructions(modeSelect.value);
+                }
+            }
+
+            function renderMapMarkers(clinics) {
+                if (!clinicMap || !resultMarkers) {
+                    return;
+                }
+                resultMarkers.clearLayers();
+                clinics.forEach(function (clinic) {
+                    L.marker([clinic.latitude, clinic.longitude], {
+                        icon: clinicSearchResultIcon,
+                        title: results.dataset.searchResultTitle.replace('__clinic__', clinic.name),
+                        zIndexOffset: 1000
+                    })
+                        .bindPopup(escapeHtml(clinic.name))
+                        .addTo(resultMarkers);
+                });
+                if (clinics.length > 0) {
+                    clinicMap.fitBounds(resultMarkers.getBounds().pad(0.2), {
+                        maxZoom: 13
+                    });
+                }
+            }
+
+            modeSelect.addEventListener('change', function () {
+                applyMode(this.value);
+                clearManualPoints(this.value);
+                hasManualSelectionSinceModeChange = false;
+                if (isMapTabActive()) {
+                    initializeMap();
+                }
+            });
+            if (mapTab) {
+                mapTab.addEventListener('click', function () {
+                    setTimeout(function () {
+                        initializeMap();
+                        if (hasManualSelectionSinceModeChange) {
+                            syncMapFromManual();
+                        }
+                    }, 150);
+                });
+            }
+            if (manualTab) {
+                manualTab.addEventListener('click', function () {
+                    syncManualPointsFromMap();
+                });
+            }
+            document.querySelectorAll('.clinic-reset-search').forEach(function (button) {
+                button.addEventListener('click', resetSearch);
+            });
+            if (exampleLineButton) {
+                exampleLineButton.addEventListener('click', useExampleIntersectingLine);
+            }
+            if (mapExampleLineButton) {
+                mapExampleLineButton.addEventListener('click', useExampleIntersectingLine);
+            }
+            if (addPolygonPointButton) {
+                addPolygonPointButton.addEventListener('click', function () {
+                    addManualPoint('polygon', '', '');
+                    hasManualSelectionSinceModeChange = true;
+                });
+            }
+            if (addLinePointButton) {
+                addLinePointButton.addEventListener('click', function () {
+                    addManualPoint('line', '', '');
+                    hasManualSelectionSinceModeChange = true;
+                });
+            }
+            if (manualPolygonPoints) {
+                manualPolygonPoints.addEventListener('input', function () {
+                    hasManualSelectionSinceModeChange = true;
+                    manualPolygonValidation.classList.toggle(
+                        'd-none', !manualPointValidationMessage('polygon', 3));
+                });
+            }
+            if (manualLinePoints) {
+                manualLinePoints.addEventListener('input', function () {
+                    hasManualSelectionSinceModeChange = true;
+                    manualLineValidation.classList.toggle(
+                        'd-none', !manualPointValidationMessage('line', 2));
+                });
+            }
+            ['latitude', 'longitude'].forEach(function (name) {
+                form.elements[name].addEventListener('input', function () {
+                    if (clinicMap && referenceMarker && radiusCircle) {
+                        setNearPoint({
+                            lat: numberFieldValue('latitude'),
+                            lng: numberFieldValue('longitude')
+                        });
+                    }
+                });
+            });
+            form.elements.radiusMeters.addEventListener('input', function () {
+                if (radiusCircle) {
+                    radiusCircle.setRadius(numberFieldValue('radiusMeters'));
+                    updateRadiusHandle();
+                }
+            });
+
+            function updateMapInstructions(mode) {
+                if (!mapInstructions) {
+                    return;
+                }
+                mapInstructions.classList.remove('text-danger');
+                if (mode === 'near') {
+                    mapInstructions.textContent = mapInstructionText('nearInstruction');
+                } else if (mode === 'within') {
+                    mapInstructions.textContent = mapInstructionText('withinInstruction');
+                } else {
+                    mapInstructions.textContent = mapInstructionText('intersectsInstruction');
+                }
+            }
+
+            function mapInstructionText(name) {
+                return mapInstructions && mapInstructions.dataset[name] ? mapInstructions.dataset[name] : '';
+            }
+
+            function showMapInstructionError(message) {
+                if (!mapInstructions) {
+                    return;
+                }
+                mapInstructions.classList.add('text-danger');
+                mapInstructions.textContent = message;
+            }
+
+            function mapSearchValidationMessage(mode) {
+                if (mode === 'near') {
+                    return hasNearSelection ? null : mapInstructionText('nearRequired');
+                }
+                if (mode === 'within') {
+                    if (!drawnLayer || drawnPoints.length < 3) {
+                        return mapInstructionText('withinRequired');
+                    }
+                    if (isSelfIntersectingPolygon(drawnPoints)) {
+                        return mapInstructionText('withinSelfIntersection');
+                    }
+                    return null;
+                }
+                return drawnLayer && drawnPoints.length >= 2 ? null : mapInstructionText('intersectsRequired');
+            }
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                runClinicSearch();
+            });
+
+            function runClinicSearch() {
+                const mode = modeSelect.value;
+                const modeLabel = selectedModeLabel();
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                }
+                if (isMapTabActive()) {
+                    initializeMap();
+                }
+                if (isMapTabActive()) {
+                    const validationMessage = mapSearchValidationMessage(mode);
+                    if (validationMessage) {
+                        showMapInstructionError(validationMessage);
+                        hideResultsSection();
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                        }
+                        return;
+                    }
+                    updateMapInstructions(mode);
+                }
+                if (!isMapTabActive() && (mode === 'within' || mode === 'intersects')) {
+                    const validationMessage = mode === 'within'
+                        ? manualPointValidationMessage('polygon', 3)
+                        : manualPointValidationMessage('line', 2);
+                    if (validationMessage) {
+                        (mode === 'within' ? manualPolygonValidation : manualLineValidation).classList.remove('d-none');
+                        hideResultsSection();
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                        }
+                        return;
+                    }
+                    (mode === 'within' ? manualPolygonValidation : manualLineValidation).classList.add('d-none');
+                }
+
+                const request = searchRequest(mode);
+                fetch(request.url, request.options)
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(results.dataset.searchFailed);
+                        }
+                        return response.json();
+                    })
+                    .then((clinics) => {
+                        updateSummary(modeLabel, clinics.length);
+                        renderClinics(clinics, modeLabel);
+                    })
+                    .catch(() => {
+                        updateSummary(modeLabel, 0);
+                        renderEmptyState();
+                    })
+                    .finally(() => {
+                        if (submitButton) {
+                            submitButton.disabled = false;
+                        }
+                    });
+            }
+
+            applyMode(modeSelect.value);
+            if (isMapTabActive()) {
+                initializeMap();
+            }
+        })();
+    </script>
+{% endblock %}

@@ -1,0 +1,22 @@
+[datasources.default]
+db-type = 'oracle'
+driver-class-name = 'oracle.jdbc.OracleDriver'
+dialect = 'ORACLE'
+maximum-pool-size = 10
+minimum-idle = 2
+initialization-fail-timeout = 60000
+connection-timeout = 30000
+
+[datasources.default.dialect-options]
+version = '23.1'
+
+[flyway.datasources.default]
+locations = ['classpath:db/migration']
+
+# Use the regular spatial-capable image already cached for the showcase.
+[test-resources.containers.oracle]
+image-name = 'gvenzl/oracle-free'
+image-tag = '23.26.2-faststart'
+
+[[test-resources.containers.oracle.copy-to-container]]
+'config/oracle/01-priority.sql' = '/container-entrypoint-initdb.d/01-priority.sql'

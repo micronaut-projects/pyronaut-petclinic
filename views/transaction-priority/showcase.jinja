@@ -1,0 +1,94 @@
+{% extends "_layout.jinja" %}
+{% block content %}
+
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-bolt me-3"></i>{{ msg["transactionPriority.title"]|e }}</h1>
+            <p>{{ msg["transactionPriority.intro"]|e }}</p>
+        </div>
+    </div>
+    <main id="transaction-priority-page" class="container flex-grow-1 py-4" data-reservation-seconds="{{ reservationSeconds|e }}">
+        <div hidden>
+            {% for key in ["error", "noAvailable", "ready", "confirmed", "emergencyPending", "emergencyWon", "regularWon", "taken", "working", "timedOut", "countdown", "completing", "finished", "outcome.NOT_STARTED", "outcome.RUNNING"] %}
+                <span data-key="{{ key|e }}">{{ msg["transactionPriority." ~ key]|e }}</span>
+            {% endfor %}
+            {% for outcome in ["COMMITTED", "PRIORITY_ROLLED_BACK", "TAKEN", "TIMED_OUT", "FAILED"] %}
+                <span data-key="outcome.{{ outcome|e }}">{{ msg["transactionPriority.outcome." ~ outcome]|e }}</span>
+            {% endfor %}
+        </div>
+        <section class="card mb-4">
+            <div class="card-body">
+                <h2 class="h4">{{ msg["transactionPriority.controls"]|e }}</h2>
+                <p class="text-muted">{{ msg["transactionPriority.instructions"]|replace("{0}", reservationSeconds)|e }}</p>
+                <div class="mb-3">
+                    <label for="priority-appointment-select" class="form-label">{{ msg["transactionPriority.availableAppointments"]|e }}</label>
+                    <select id="priority-appointment-select" class="form-select">
+                        {% for appointment in appointments %}
+                            <option value="{{ appointment.id|e }}">{{ appointment.displayOrder|e }}. {{ appointment.label|e }}</option>
+                        {% endfor %}
+                        {% if not appointments %}
+                            <option value="">{{ msg["transactionPriority.noAvailable"]|e }}</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button id="priority-start-low" type="button" class="btn btn-warning">
+                        <i class="fas fa-user"></i> {{ msg["transactionPriority.startLow"]|e }}
+                    </button>
+                    <button id="priority-start-high" type="button" class="btn btn-success" disabled>
+                        <i class="fas fa-triangle-exclamation"></i> {{ msg["transactionPriority.startHigh"]|e }}
+                    </button>
+                    <button id="priority-reset" type="button" class="btn btn-outline-secondary">
+                        <i class="fas fa-rotate-left"></i> {{ msg["transactionPriority.reset"]|e }}
+                    </button>
+                </div>
+                <p id="priority-error" class="alert alert-danger mt-3 mb-0 d-none" role="alert"></p>
+            </div>
+        </section>
+        <section id="priority-state" class="d-none" aria-live="polite">
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100 priority-booking low">
+                        <div class="card-body">
+                            <h2 class="h5">LOW · {{ msg["transactionPriority.regular"]|e }}</h2>
+                            <p id="priority-low" class="mb-0"></p>
+                            <p id="priority-countdown" class="text-muted mt-3 mb-1"></p>
+                            <div id="priority-countdown-value" class="fs-2 fw-bold font-monospace" role="timer" aria-live="off"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 priority-booking high">
+                        <div class="card-body">
+                            <h2 class="h5">HIGH · {{ msg["transactionPriority.emergency"]|e }}</h2>
+                            <p id="priority-high" class="mb-0"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="h5">{{ msg["transactionPriority.result"]|e }}</h2>
+                    <p id="priority-summary"></p>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">{{ msg["transactionPriority.appointment"]|e }}</dt>
+                        <dd id="priority-appointment" class="col-sm-8"></dd>
+                        <dt class="col-sm-4">{{ msg["transactionPriority.databaseStatus"]|e }}</dt>
+                        <dd id="priority-database-status" class="col-sm-8"></dd>
+                        <dt class="col-sm-4">{{ msg["transactionPriority.suggestion"]|e }}</dt>
+                        <dd id="priority-suggestion" class="col-sm-8"></dd>
+                    </dl>
+                </div>
+            </div>
+        </section>
+        <details class="card">
+            <summary class="card-body fw-bold">{{ msg["transactionPriority.how"]|e }}</summary>
+            <div class="card-body pt-0">
+                <p>{{ msg["transactionPriority.explanation"]|replace("{0}", reservationSeconds)|e }}</p>
+                <p class="text-muted mb-0">{{ msg["transactionPriority.limitations"]|replace("{0}", reservationSeconds)|e }}</p>
+            </div>
+        </details>
+    </main>
+    <script type="module" src="/resources/js/transaction-priority.js"></script>
+
+{% endblock %}

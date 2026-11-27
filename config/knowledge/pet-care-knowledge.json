@@ -1,0 +1,174 @@
+{
+  "documents": [
+    {
+      "title": "Dog preventive care",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Vaccination, exercise, and routine wellness guidance for dogs.",
+      "chunks": [
+        {
+          "topic": "preventive care",
+          "species": "dog",
+          "content": "Puppy and adult dogs need a vaccination plan designed with a veterinarian. Puppy shots are commonly given as a series, followed by boosters based on local risk and the dog's health history."
+        },
+        {
+          "topic": "activity",
+          "species": "dog",
+          "content": "Regular age-appropriate activity supports a healthy dog. Start puppies with short, gentle play sessions, provide fresh water, and ask a veterinarian before changing exercise for a senior or recovering dog."
+        }
+      ]
+    },
+    {
+      "title": "Cat nutrition basics",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Practical nutrition and hydration reminders for cats.",
+      "chunks": [
+        {
+          "topic": "nutrition",
+          "species": "cat",
+          "content": "Cats need a complete, balanced diet with portions matched to age, body condition, and activity. Feed measured meals consistently and ask a veterinarian about a diet change or weight concern."
+        },
+        {
+          "topic": "hydration",
+          "species": "cat",
+          "content": "Fresh water should be available every day. Increased thirst, reduced drinking, repeated vomiting, or a sudden appetite change can signal illness and should be discussed promptly with a veterinarian."
+        }
+      ]
+    },
+    {
+      "title": "Pet emergency guide",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Warning signs that need immediate veterinary attention.",
+      "chunks": [
+        {
+          "topic": "emergency",
+          "species": "all",
+          "content": "Trouble breathing, collapse, uncontrolled bleeding, seizures, or severe pain are emergencies. Keep the pet calm, avoid giving human medication, and contact an emergency veterinary clinic immediately."
+        },
+        {
+          "topic": "poison",
+          "species": "all",
+          "content": "If a pet may have eaten a toxic substance, remove access to it, keep the packaging if safe, and call a veterinarian or animal poison service. Do not induce vomiting unless a professional instructs you to do so."
+        }
+      ]
+    },
+    {
+      "title": "Senior pet comfort",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Mobility and comfort observations for aging pets.",
+      "chunks": [
+        {
+          "topic": "mobility",
+          "species": "all",
+          "content": "Stiffness, difficulty climbing stairs, reluctance to walk, or changes in grooming can be signs of joint or mobility problems. A veterinarian can assess pain and recommend a safe treatment plan."
+        },
+        {
+          "topic": "wellness",
+          "species": "all",
+          "content": "Senior pets benefit from regular wellness checks and monitoring of appetite, water intake, sleep, movement, and behavior. Record changes so the veterinary team can identify trends."
+        }
+      ]
+    },
+    {
+      "title": "Building trust with pets",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Communication and relationship habits that help pets feel safe.",
+      "chunks": [
+        {
+          "topic": "bonding",
+          "species": "all",
+          "content": "A strong relationship grows from predictable routines, calm interactions, and rewards for wanted behavior. Let a new pet approach at its own pace and provide a quiet place where it can rest undisturbed."
+        },
+        {
+          "topic": "body language",
+          "species": "all",
+          "content": "Learn the individual pet's body language. Hiding, lip licking, flattened ears, a tucked tail, or repeated yawning can indicate stress. Pause the interaction and give the pet more space when these signals appear."
+        }
+      ]
+    },
+    {
+      "title": "Welcoming a new pet",
+      "source": "Pet Clinic demonstration notes",
+      "description": "A gentle introduction plan for pets joining a household.",
+      "chunks": [
+        {
+          "topic": "introduction",
+          "species": "all",
+          "content": "Introduce a new pet to the household gradually. Start with separate spaces, exchange scents safely, and use short supervised meetings. Never force animals to interact, and separate them when either pet shows fear or aggression."
+        },
+        {
+          "topic": "children",
+          "species": "all",
+          "content": "Children should learn to approach pets calmly, avoid disturbing them while eating or sleeping, and ask before touching. An adult should supervise interactions and teach children to respect the pet's boundaries."
+        }
+      ]
+    },
+    {
+      "title": "Pet-friendly home safety",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Everyday household and travel safety reminders for companion animals.",
+      "chunks": [
+        {
+          "topic": "home safety",
+          "species": "all",
+          "content": "Keep medicines, cleaning products, electrical cables, small objects, and unsafe foods out of reach. Check household plants before bringing them home and use secure gates or carriers to prevent accidental escapes."
+        },
+        {
+          "topic": "travel",
+          "species": "all",
+          "content": "For travel, use a secure carrier or harness appropriate for the pet, bring water and familiar bedding, and make sure identification details are current. Never leave a pet unattended in a parked vehicle."
+        }
+      ]
+    },
+    {
+      "title": "Bird companion care",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Enrichment, diet, and hygiene guidance for pet birds.",
+      "chunks": [
+        {
+          "topic": "enrichment",
+          "species": "bird",
+          "content": "Pet birds need daily mental stimulation, safe toys, opportunities to forage, and regular social interaction. Rotate appropriate toys and observe for changes in vocalization, activity, or feather condition."
+        },
+        {
+          "topic": "hygiene",
+          "species": "bird",
+          "content": "Provide clean food and water dishes and clean the cage regularly using bird-safe products. Good ventilation matters, but birds should be protected from drafts, smoke, aerosols, and overheated non-stick cookware fumes."
+        }
+      ]
+    },
+    {
+      "title": "Reptile habitat basics",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Environment and handling considerations for pet reptiles.",
+      "chunks": [
+        {
+          "topic": "habitat",
+          "species": "reptile",
+          "content": "A reptile habitat should match the species' requirements for temperature, humidity, lighting, substrate, hiding places, and enclosure size. Use reliable equipment and monitor conditions rather than estimating them."
+        },
+        {
+          "topic": "handling",
+          "species": "reptile",
+          "content": "Handle reptiles gently with clean hands and support the body as recommended for the species. Wash hands after handling reptiles or cleaning their habitat, especially before preparing food."
+        }
+      ]
+    },
+    {
+      "title": "Positive pet training",
+      "source": "Pet Clinic demonstration notes",
+      "description": "Reward-based training ideas for everyday pet behavior.",
+      "chunks": [
+        {
+          "topic": "training",
+          "species": "dog",
+          "content": "Use short, consistent training sessions and reward the behavior you want to see. Practice in a quiet environment first, then gradually add distractions. Avoid punishment that creates fear or confusion."
+        },
+        {
+          "topic": "routine",
+          "species": "cat",
+          "content": "Cats can learn routines through patience and rewards. Provide suitable scratching areas, play opportunities, and clean litter facilities, then reinforce calm behavior instead of punishing accidents."
+        }
+      ]
+    }
+  ]
+}
